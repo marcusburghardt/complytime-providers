@@ -37,24 +37,24 @@ type recordingRealRunner struct {
 	calls     []realConftestCall
 }
 
-func (runner *recordingRealRunner) Run(name string, args ...string) ([]byte, error) {
+func (runner *recordingRealRunner) Run(name string, args ...string) (scan.CommandOutput, error) {
 	return runner.execute(nil, name, args)
 }
 
-func (runner *recordingRealRunner) RunWithEnv(env []string, name string, args ...string) ([]byte, error) {
+func (runner *recordingRealRunner) RunWithEnv(env []string, name string, args ...string) (scan.CommandOutput, error) {
 	return runner.execute(env, name, args)
 }
 
-func (runner *recordingRealRunner) execute(env []string, name string, args []string) ([]byte, error) {
+func (runner *recordingRealRunner) execute(env []string, name string, args []string) (scan.CommandOutput, error) {
 	actualArgs := append([]string(nil), args...)
 	if name == "git" {
 		if runner.gitSource == "" || len(actualArgs) != 7 || actualArgs[0] != "clone" {
-			return nil, fmt.Errorf("unexpected git invocation %q", actualArgs)
+			return scan.CommandOutput{}, fmt.Errorf("unexpected git invocation %q", actualArgs)
 		}
 		actualArgs[5] = runner.gitSource
 		runner.clonePath = actualArgs[6]
 	}
-	var output []byte
+	var output scan.CommandOutput
 	var err error
 	if env == nil {
 		output, err = (scan.ExecRunner{}).Run(name, actualArgs...)
@@ -67,7 +67,7 @@ func (runner *recordingRealRunner) execute(env []string, name string, args []str
 		}
 	}
 	if name == "conftest" && len(actualArgs) > 0 && actualArgs[0] == "test" {
-		runner.calls = append(runner.calls, realConftestCall{args: actualArgs, output: output, err: err})
+		runner.calls = append(runner.calls, realConftestCall{args: actualArgs, output: output.Stdout, err: err})
 	}
 	return output, err
 }
@@ -171,7 +171,7 @@ func TestScan_RealConftestWorkspaceIsolation(t *testing.T) {
 	} {
 		raw, err := scan.EvalPolicyWithNamespacesAndIgnore(test.path, policy, []string{"main"}, control, "", nil)
 		require.NoError(t, err)
-		records := decodeRealCall(t, realConftestCall{output: raw})
+		records := decodeRealCall(t, realConftestCall{output: raw.Stdout})
 		require.Len(t, records, 1)
 		assert.Equal(t, test.path, records[0].Filename)
 		assert.Equal(t, test.success, records[0].Successes)

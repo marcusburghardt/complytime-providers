@@ -18,6 +18,7 @@ import (
 	"github.com/complytime/complyctl/pkg/provider"
 	"github.com/complytime/complytime-providers/cmd/opa-provider/config"
 	"github.com/complytime/complytime-providers/cmd/opa-provider/generate"
+	"github.com/complytime/complytime-providers/cmd/opa-provider/scan"
 	"github.com/complytime/complytime-providers/internal/genindex"
 )
 
@@ -26,7 +27,9 @@ import (
 type mockRunner struct {
 	calls    []mockCall
 	callFn   func(name string, args []string) ([]byte, error)
+	outputFn func(name string, args []string) (scan.CommandOutput, error)
 	response []byte
+	stderr   []byte
 	err      error
 }
 
@@ -36,20 +39,39 @@ type mockCall struct {
 	args []string
 }
 
-func (m *mockRunner) Run(name string, args ...string) ([]byte, error) {
+func (m *mockRunner) Run(name string, args ...string) (scan.CommandOutput, error) {
 	m.calls = append(m.calls, mockCall{name: name, args: args})
-	if m.callFn != nil {
-		return m.callFn(name, args)
+	if m.outputFn != nil {
+		return m.outputFn(name, args)
 	}
-	return m.response, m.err
+	if m.callFn != nil {
+		return m.callOutput(name, args)
+	}
+	return m.output(m.response, m.err)
 }
 
-func (m *mockRunner) RunWithEnv(env []string, name string, args ...string) ([]byte, error) {
+func (m *mockRunner) RunWithEnv(env []string, name string, args ...string) (scan.CommandOutput, error) {
 	m.calls = append(m.calls, mockCall{env: env, name: name, args: args})
-	if m.callFn != nil {
-		return m.callFn(name, args)
+	if m.outputFn != nil {
+		return m.outputFn(name, args)
 	}
-	return m.response, m.err
+	if m.callFn != nil {
+		return m.callOutput(name, args)
+	}
+	return m.output(m.response, m.err)
+}
+
+func (m *mockRunner) callOutput(name string, args []string) (scan.CommandOutput, error) {
+	data, err := m.callFn(name, args)
+	return m.output(data, err)
+}
+
+func (m *mockRunner) output(data []byte, err error) (scan.CommandOutput, error) {
+	// Existing failure fixtures describe tool diagnostics, now delivered on stderr.
+	if err != nil {
+		return scan.CommandOutput{Stderr: append(append([]byte(nil), m.stderr...), data...)}, err
+	}
+	return scan.CommandOutput{Stdout: data, Stderr: m.stderr}, nil
 }
 
 type mockLoader struct {

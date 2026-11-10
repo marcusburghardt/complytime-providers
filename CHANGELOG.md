@@ -20,6 +20,9 @@
 
 ### Fixed
 
+- **opa-provider**: Separate command stdout from diagnostic stderr so conftest warnings
+  do not corrupt JSON parsing. Preserve captured environments, composed ignore rules,
+  and stderr-based empty-directory rejection without misclassifying other tool failures.
 - **ci**: Reject indirect, excluded, and replacement-only complyctl entries when resolving the
   release baseline, report module parse failures with stage context, restore Renovate tracking
   for the checksum-pinned Conftest release, and fix the shell-test lint failure.

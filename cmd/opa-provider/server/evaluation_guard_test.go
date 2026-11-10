@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/complytime/complyctl/pkg/provider"
+	"github.com/complytime/complytime-providers/cmd/opa-provider/scan"
 )
 
 func TestScan_VersionMetadataDoesNotGateLocalOrRemoteEvaluation(t *testing.T) {
@@ -60,6 +61,55 @@ func TestScan_VersionMetadataDoesNotGateLocalOrRemoteEvaluation(t *testing.T) {
 				assert.Equal(t, "test", runner.calls[0].args[0])
 			})
 		}
+	}
+}
+
+func TestScan_SeparatedConftestStreams(t *testing.T) {
+	for _, scenario := range []struct {
+		name, stdout, stderr string
+		executionError       bool
+		wantError            string
+	}{
+		{"valid stdout with warnings", conftestAllSuccessJSON, "diagnostic warning", false, ""},
+		{"noncompliant stdout", conftestHappyJSON, "diagnostic warning", false, ""},
+		{"invalid stdout with valid JSON stderr", "not json", conftestAllSuccessJSON, false, "parsing conftest output"},
+		{"empty directory on stderr", "", conftestNoFilesFound + "\n", true, "no eligible input"},
+		{"sentinel on stdout is not a diagnostic", conftestNoFilesFound, "rego parse error", true, "evaluating policies"},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			writeScanConfig(t, workspace)
+			input := t.TempDir()
+			runner := &mockRunner{outputFn: func(name string, args []string) (scan.CommandOutput, error) {
+				assert.Equal(t, "conftest", name)
+				assert.Contains(t, args, "--no-fail")
+				var err error
+				if scenario.executionError {
+					err = errors.New("tool failed")
+				}
+				return scan.CommandOutput{Stdout: []byte(scenario.stdout), Stderr: []byte(scenario.stderr)}, err
+			}}
+			srv := New(ServerOptions{Runner: runner, WorkspaceDir: workspace,
+				ToolChecker: func() ([]string, error) { return nil, nil }})
+			target := localTarget(t, input, "")
+			response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{target}))
+			require.NoError(t, err)
+			if scenario.wantError != "" {
+				require.Len(t, response.Errors, 1)
+				assert.Contains(t, response.Errors[0], scenario.wantError)
+				assert.Empty(t, response.Assessments)
+				assert.Empty(t, response.MappingReferences)
+				if scenario.name == "sentinel on stdout is not a diagnostic" {
+					assert.NotContains(t, response.Errors[0], "no eligible input")
+				}
+				return
+			}
+			assert.Empty(t, response.Errors)
+			require.NotEmpty(t, response.Assessments)
+			if scenario.name == "noncompliant stdout" {
+				assert.Equal(t, provider.ResultFailed, response.Assessments[0].Steps[0].Result)
+			}
+		})
 	}
 }
 

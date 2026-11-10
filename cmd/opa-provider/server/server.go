@@ -625,7 +625,7 @@ func (s *ProviderServer) evalAndParse(
 		inputPath, policyDir, scanCfg.IDs, s.opts.Runner, ignore, environment,
 	)
 	if err != nil {
-		if inputInfo.IsDir() && containsConftestNoFilesFound(raw) {
+		if inputInfo.IsDir() && containsConftestNoFilesFound(raw.Stderr) {
 			return nil, &inputSelectionError{err: fmt.Errorf(
 				"no eligible input could be confirmed for directory %q; "+
 					"add a supported input or adjust ignore settings: %w", inputPath, err)}
@@ -633,7 +633,7 @@ func (s *ProviderServer) evalAndParse(
 		return nil, fmt.Errorf("evaluating policies; check conftest output and policy configuration: %w", err)
 	}
 
-	result, err := results.ParseConftestOutput(raw, displayName, branch)
+	result, err := results.ParseConftestOutput(raw.Stdout, displayName, branch)
 	if err != nil {
 		err = fmt.Errorf("parsing conftest output; check conftest output and policy configuration: %w", err)
 		if inputInfo.IsDir() {
