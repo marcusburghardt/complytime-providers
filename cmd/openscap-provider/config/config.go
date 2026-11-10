@@ -17,6 +17,8 @@ import (
 	"github.com/antchfx/xmlquery"
 	"github.com/complytime/complyctl/pkg/provider"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/complytime/complytime-providers/internal/evidence"
 )
 
 const (
@@ -29,6 +31,14 @@ const (
 	DatastreamsDirEnvVar  string = "SSG_CONTENT_DIR"
 	SystemInfoFileEnvVar  string = "OS_RELEASE_FILE"
 )
+
+// StorageOptions supplies the resolved provider results root and execution account
+// without changing legacy package globals. Workspace must be resolved per RPC.
+func StorageOptions(workspace string, identity evidence.Identity) evidence.StorageOptions {
+	return evidence.StorageOptions{WorkspaceRoot: workspace,
+		ResultsRoot: filepath.Join(workspace, provider.WorkspaceDir, ProviderDir, ResultsDir),
+		Identity:    identity}
+}
 
 // getDatastreamsDir returns the directory containing SSG datastream files.
 // Checks SSG_CONTENT_DIR environment variable first, falls back to default.

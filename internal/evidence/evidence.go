@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package evidence provides shared evidence utilities for all
-// provider plugins. It centralizes digest computation and evidence
-// identity constants to avoid duplication across providers.
+// provider plugins. It centralizes digest computation, evidence identity,
+// workspace resolution, private evaluation storage and supporting metadata.
 package evidence
 
 import (

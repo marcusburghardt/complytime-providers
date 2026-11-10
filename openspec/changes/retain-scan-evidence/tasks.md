@@ -52,7 +52,7 @@ error while adding the new finalization errors from D6/D9.
 
 ## 1. Shared evaluation storage and context
 
-- [ ] 1.1 Implement evaluation allocation and centralized naming/0700/0600-mode
+- [x] 1.1 Implement evaluation allocation and centralized naming/0700/0600-mode
   constants in focused `internal/evidence` files. Provider configuration derives
   absolute workspace/results roots using `provider.WorkspaceDir` and its existing
   constants; OS identity supplies the execution account for ownership verification.
@@ -67,17 +67,17 @@ error while adding the new finalization errors from D6/D9.
   token entropy source, fixed-clock repeated allocations, concurrent allocations,
   forced collisions, clock rollback, allocation failure, and retry exhaustion.
   Assert atomic no-replace behavior deterministically, not only under `-race`.
-- [ ] 1.2 Implement bounded readable labels and root-constrained context-directory creation separately from `SanitizeForID`; verify D1's character set, 0/1/79/80/81-byte inputs and non-empty fallback, slash-containing branches, long paths, lossy collisions, URL credential exclusion, and a symlinked context parent pointing outside the root. Cover `.`, `..`, absolute paths, `a/../../b`, NUL/control characters, and empty-after-normalization labels, asserting safe components or rejection without writes outside the results root.
-- [ ] 1.3 Implement best-effort versioned metadata persistence with an explicit allowlist and readable target correlation keys; verify the D5 envelope and allowed provider fields, omission of digests/environment/target-variable maps, workspace-relative internal paths and absolute external provenance paths per D8, context surviving label truncation, documented key normalization, credential exclusion, and write/close failures warning without blocking evidence.
-- [ ] 1.4 Add shared artifact-instance identity/reference construction and timestamp
+- [x] 1.2 Implement bounded readable labels and root-constrained context-directory creation separately from `SanitizeForID`; verify D1's character set, 0/1/79/80/81-byte inputs and non-empty fallback, slash-containing branches, long paths, lossy collisions, URL credential exclusion, and a symlinked context parent pointing outside the root. Cover `.`, `..`, absolute paths, `a/../../b`, NUL/control characters, and empty-after-normalization labels, asserting safe components or rejection without writes outside the results root.
+- [x] 1.3 Implement best-effort versioned metadata persistence with an explicit allowlist and readable target correlation keys; verify the D5 envelope and allowed provider fields, omission of digests/environment/target-variable maps, workspace-relative internal paths and absolute external provenance paths per D8, context surviving label truncation, documented key normalization, credential exclusion, and write/close failures warning without blocking evidence.
+- [x] 1.4 Add shared artifact-instance identity/reference construction and timestamp
   propagation support. Pass only validated, already-absolute artifact paths to
   `FileURL`; do not rely on its relative-input/failure fallback. Cover spaces,
   percent signs, and non-ASCII names. Verify repeated references agree, distinct
   evaluations do not collapse, and URLs identify the same files as coordinates
   resolved against the supplied workspace root. Assert `Source.ReferenceID` matches
   its mapping ID without requiring `Evidence.ID` equality.
-- [ ] 1.5 Document helper guarantees and limitations in GoDoc and assess AGENTS impact; verify API comments cover allocation errors, returned paths, collection-start semantics, and filesystem side effects.
-- [ ] 1.6 Implement root-constrained artifact access through allocation, write,
+- [x] 1.5 Document helper guarantees and limitations in GoDoc and assess AGENTS impact; verify API comments cover allocation errors, returned paths, collection-start semantics, and filesystem side effects.
+- [x] 1.6 Implement root-constrained artifact access through allocation, write,
   parse, hash, and finalization. Test symlinked context parents, artifact symlink
   substitution, non-regular outputs, workspace-root symlink resolution, and
   validated/hashed file agreement without external reads or ownership changes.
@@ -106,10 +106,10 @@ error while adding the new finalization errors from D6/D9.
 
 ## 2. Ampel retention
 
-- [ ] 2.1 Allocate a readable repo/branch/spec evaluation directory per execution and pass its paths into `ScanRepository`; verify three repeated scans, two specs, and multiple branches in one request retain independent attestation pairs with distinct tokens, coordinates, and IDs, including slash-containing branches.
-- [ ] 2.2 Finalize timestamps, digests, paths, and instance-qualified references before publishing assessments; attempt metadata persistence and stop writing legacy summaries. Verify each source/reference pair resolves to its stored attestation and multiple assessments share artifacts.
-- [ ] 2.3 Add failure regressions for missing/invalid tool output and write/close/digest failures; verify no stale or incomplete evidence is published, metadata failures warn without suppressing complete evidence, and valid failing-compliance results remain retained.
-- [ ] 2.4 Update Ampel man-page FILES/EVIDENCE sections with layout, changed
+- [x] 2.1 Allocate a readable repo/branch/spec evaluation directory per execution and pass its paths into `ScanRepository`; verify three repeated scans, two specs, and multiple branches in one request retain independent attestation pairs with distinct tokens, coordinates, and IDs, including slash-containing branches.
+- [x] 2.2 Finalize timestamps, digests, paths, and instance-qualified references before publishing assessments; attempt metadata persistence and stop writing legacy summaries. Verify each source/reference pair resolves to its stored attestation and multiple assessments share artifacts.
+- [x] 2.3 Add failure regressions for missing/invalid tool output and write/close/digest failures; verify no stale or incomplete evidence is published, metadata failures warn without suppressing complete evidence, and valid failing-compliance results remain retained.
+- [x] 2.4 Update Ampel man-page FILES/EVIDENCE sections with layout, changed
   coordinate/ID forms marked as breaking, spec-versus-policy context, and growth
   behavior. In the man page and provider README, replace legacy summary entries
   with the note that existing summaries remain untouched but are no longer written.

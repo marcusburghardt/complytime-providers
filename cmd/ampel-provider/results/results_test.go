@@ -424,7 +424,7 @@ func TestParseAmpelOutput_OversizedGuidance(t *testing.T) {
 	require.Contains(t, err.Error(), "guidance field exceeds maximum size")
 }
 
-func TestWritePerRepoResult(t *testing.T) {
+func TestToScanResponse_DoesNotWriteNormalizedSummary(t *testing.T) {
 	dir := t.TempDir()
 	result := &PerRepoResult{
 		Repository: "https://github.com/myorg/repo1",
@@ -434,22 +434,22 @@ func TestWritePerRepoResult(t *testing.T) {
 			{TenetID: "t1", Title: "Test", Result: "pass", Reason: "OK"},
 		},
 	}
-	err := WritePerRepoResult(result, dir)
-	require.NoError(t, err)
+	response := ToScanResponse([]*PerRepoResult{result}, nil)
+	require.Len(t, response.Assessments, 1)
 
 	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
-	require.Len(t, files, 1)
-	require.Contains(t, files[0].Name(), "myorg-repo1-main.json")
+	require.Empty(t, files)
 }
 
-func TestWritePerRepoResult_Overwrites(t *testing.T) {
+func TestToScanResponse_PreservesExistingSummary(t *testing.T) {
 	dir := t.TempDir()
+	path := filepath.Join(dir, "legacy.json")
+	require.NoError(t, os.WriteFile(path, []byte("legacy result"), 0o600))
 	r1 := &PerRepoResult{Repository: "https://github.com/org/repo", Branch: "main", Status: "pass"}
 	r2 := &PerRepoResult{Repository: "https://github.com/org/repo", Branch: "main", Status: "fail"}
 
-	require.NoError(t, WritePerRepoResult(r1, dir))
-	require.NoError(t, WritePerRepoResult(r2, dir))
+	ToScanResponse([]*PerRepoResult{r1, r2}, nil)
 
 	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
@@ -457,18 +457,19 @@ func TestWritePerRepoResult_Overwrites(t *testing.T) {
 
 	data, err := os.ReadFile(filepath.Join(dir, files[0].Name()))
 	require.NoError(t, err)
-	require.Contains(t, string(data), `"fail"`)
+	require.Equal(t, "legacy result", string(data))
 }
 
-func TestWritePerRepoResult_InvalidDir(t *testing.T) {
+func TestToScanResponse_OperationalFailureHasNoSummaryOrEvidence(t *testing.T) {
 	result := &PerRepoResult{
 		Repository: "https://github.com/org/repo",
 		Branch:     "main",
-		Status:     "pass",
+		Status:     "error", Error: "required artifact write failed",
 	}
-	err := WritePerRepoResult(result, "/dev/null/impossible")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "creating results directory")
+	response := ToScanResponse([]*PerRepoResult{result}, nil)
+	require.Len(t, response.Errors, 1)
+	require.Empty(t, response.Assessments)
+	require.Empty(t, response.MappingReferences)
 }
 
 func TestToScanResponse(t *testing.T) {

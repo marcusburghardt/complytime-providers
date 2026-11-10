@@ -107,7 +107,7 @@ complytime-providers/
 │   ├── archive/               # Shared tar.gz extraction with security constraints
 │   ├── complytime/
 │   │   └── testdata/openscap/ # XML test fixtures
-│   ├── evidence/              # Shared SHA256 file digest and evidence constants
+│   ├── evidence/              # Shared evidence digests, workspace resolution and evaluation storage
 │   ├── genindex/               # Shared generated-artifact index validation and resolution
 │   └── version/               # Build-time version injection
 ├── docs/                      # Provider development guide

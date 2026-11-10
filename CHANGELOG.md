@@ -4,6 +4,12 @@
 
 ### Added
 
+- **ampel-provider**: Preserve each repository/branch/collection-spec evaluation's
+  snappy and Ampel attestations in a fresh, private, execution-account-owned
+  directory. Repeated scans retain independent evidence and matching SHA256
+  digests, with best-effort non-secret metadata for correlation.
+- **internal/evidence**: Add constrained evaluation allocation, workspace resolution,
+  artifact-instance references and supporting metadata helpers for provider integration.
 - **ampel-provider**: Added `WhenClause` type support for ampel policy serialization. Policies with `when:` guard predicates can now be loaded, merged, and written without losing the `when` field during round-trip.
 - **ampel-provider**: Added version guard that verifies ampel >= 1.4.2 at `Generate`/`Scan` time. Produces an actionable error message when an older ampel version is detected, instead of confusing partial failures from unrecognized CLI flags.
 - **all providers**: Populated `Evidence` entries on every `AssessmentLog` returned in `ScanResponse`, enabling auditors to trace each compliance assessment result back to the artifact that produced it. OpenSCAP attaches ARF file evidence with SHA256 digest, Ampel attaches both snappy and ampel in-toto attestation evidence with digests, and OPA attaches conftest input path evidence. Each provider now also declares `MappingReferences` on `ScanResponse` linking evidence to their source artifacts.
@@ -30,6 +36,8 @@
 
 ### Documentation
 
+- Document Ampel's retained evidence layout, workspace-relative coordinates, private
+  access, storage growth, local digest verification and upgrade/rollback behavior.
 - Added man pages for all three provider binaries (`complyctl-provider-openscap`, `complyctl-provider-ampel`, `complyctl-provider-opa`) documenting configuration variables, environment variables, required external tools, and workspace paths. Man pages are maintained as Pandoc markdown in `docs/man/` and rendered via `make man`.
 
 ### Infrastructure
@@ -43,6 +51,12 @@
 
 ### Breaking Changes
 
+- **ampel-provider**: Evidence coordinates now resolve against the selected workspace;
+  relative configuration/input paths use that workspace rather than invocation CWD.
+  Output paths and evidence/reference IDs are evaluation-qualified, with no fixed-path
+  aliases. Normalized per-repository summaries are no longer written. Absolute
+  `file://` URL representation is retained; legacy files and logs remain untouched.
+  (Specs: `retain-scan-evidence/evidence-source` and `scan-artifact-retention`.)
 - **opa-provider**: Local directory scans exclude workspace files, including user-owned files, from results. The excluded boundaries are the host-injected workspace base joined with `.complytime` and, when different, the provider's configured artifact directory (normally `.complytime` relative to its working directory). If the host supplies no base, the provider uses the configured directory. (Fixes #231; Spec: `openspec/changes/opa-exclude-workspace-from-input/`)
 - **opa-provider**: Explicit local workspace files and directories now produce an operational error. To evaluate intended input, copy it outside both workspace boundaries and select the copy; do not use a hard link. The provider also rejects unsafe symlinks and hard links encountered while inspecting selected input, including remote clone links or files that reach other workspace content, unresolved links, and cycles. Non-cyclic links inside the selected remote clone remain eligible. Exclusion does not prune traversal, and preflight is not a sandbox against concurrent filesystem changes.
 - **opa-provider**: Empty or fully ignored local directories and remote clones or scan paths with no confirmed evaluated input produce an operational error and no assessments for that target instead of a synthetic pass. Add a supported file or adjust the effective ignore rule; other targets retain their results.
