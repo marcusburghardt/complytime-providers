@@ -4,6 +4,9 @@
 
 ### Added
 
+- **openscap-provider**: Preserve independent ARF and supporting XCCDF outputs for
+  each executed system evaluation, with matching digests, collection-start timestamps,
+  private execution-account-owned storage and best-effort target/profile metadata.
 - **ampel-provider**: Preserve each repository/branch/collection-spec evaluation's
   snappy and Ampel attestations in a fresh, private, execution-account-owned
   directory. Repeated scans retain independent evidence and matching SHA256
@@ -36,6 +39,8 @@
 
 ### Documentation
 
+- Document OpenSCAP's retained target/profile layout, selected-workspace lookup,
+  private/root-run access, evidence verification and upgrade/rollback behavior.
 - Document Ampel's retained evidence layout, workspace-relative coordinates, private
   access, storage growth, local digest verification and upgrade/rollback behavior.
 - Added man pages for all three provider binaries (`complyctl-provider-openscap`, `complyctl-provider-ampel`, `complyctl-provider-opa`) documenting configuration variables, environment variables, required external tools, and workspace paths. Man pages are maintained as Pandoc markdown in `docs/man/` and rendered via `make man`.
@@ -51,6 +56,11 @@
 
 ### Breaking Changes
 
+- **openscap-provider**: Scan paths and evidence/reference IDs are evaluation-qualified
+  without fixed-path aliases. Coordinates and relative datastream configuration use
+  the selected workspace, not invocation CWD. Absolute `file://` URL representation
+  is unchanged; legacy artifacts and historical logs remain untouched.
+  (Specs: `retain-scan-evidence/evidence-source` and `scan-artifact-retention`.)
 - **ampel-provider**: Evidence coordinates now resolve against the selected workspace;
   relative configuration/input paths use that workspace rather than invocation CWD.
   Output paths and evidence/reference IDs are evaluation-qualified, with no fixed-path

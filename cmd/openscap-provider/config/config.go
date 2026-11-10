@@ -30,6 +30,7 @@ const (
 	DefaultSystemInfoFile string = "/etc/os-release"
 	DatastreamsDirEnvVar  string = "SSG_CONTENT_DIR"
 	SystemInfoFileEnvVar  string = "OS_RELEASE_FILE"
+	TailoringFile         string = "tailoring.xml"
 )
 
 // StorageOptions supplies the resolved provider results root and execution account
@@ -98,12 +99,12 @@ func cpeMatches(systemCPE, datastreamCPE string) bool {
 	return true
 }
 
-// Resolved convention-based file paths. These are constants — the provider
-// always reads/writes to these locations under the workspace directory.
+// Legacy convention-based paths remain for compatibility with existing files.
+// New evaluations use explicitly allocated paths and never refresh these results.
 var (
-	PolicyPath  = filepath.Join(provider.WorkspaceDir, ProviderDir, PolicyDir, "tailoring.xml")
-	ResultsPath = filepath.Join(provider.WorkspaceDir, ProviderDir, ResultsDir, "results.xml")
-	ARFPath     = filepath.Join(provider.WorkspaceDir, ProviderDir, ResultsDir, "arf.xml")
+	PolicyPath  = filepath.Join(provider.WorkspaceDir, ProviderDir, PolicyDir, TailoringFile)
+	ResultsPath = filepath.Join(provider.WorkspaceDir, ProviderDir, ResultsDir, evidence.XCCDFFile)
+	ARFPath     = filepath.Join(provider.WorkspaceDir, ProviderDir, ResultsDir, evidence.ARFFile)
 )
 
 // EnsureDirectories creates the provider workspace directory structure.
