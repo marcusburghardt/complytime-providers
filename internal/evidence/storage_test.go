@@ -61,10 +61,20 @@ func TestLabel_BoundedSafeComponents(t *testing.T) {
 func TestAllocate_ExclusiveCollisionsAndRollback(t *testing.T) {
 	options := storageOptions(t)
 	options.Random = bytes.NewReader(bytes.Repeat([]byte{1}, tokenBytes))
-	first := allocateTest(t, options, "repo", "release/1")
+	first, err := Allocate(options, "repo", "release/1")
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, first.Close()) })
 	assert.Equal(t, strings.Repeat("01", tokenBytes), first.Token)
 	assert.Equal(t, filepath.Join(options.ResultsRoot, "repo", "release-1",
 		"evaluation-20261110T120102Z-"+first.Token), first.Directory)
+	assert.Equal(t, options.Clock(), first.CollectionTime)
+	info, err := os.Stat(first.Directory)
+	require.NoError(t, err)
+	assert.True(t, info.IsDir())
+	assert.Equal(t, os.FileMode(DirectoryMode), info.Mode().Perm())
+	entries, err := os.ReadDir(first.Directory)
+	require.NoError(t, err)
+	assert.Empty(t, entries)
 	require.NoError(t, first.Write(ConftestFile, []byte("original")))
 	// Force the first candidate to collide, then offer a different token.
 	options.Random = bytes.NewReader(append(bytes.Repeat([]byte{1}, tokenBytes), bytes.Repeat([]byte{2}, tokenBytes)...))
@@ -76,8 +86,9 @@ func TestAllocate_ExclusiveCollisionsAndRollback(t *testing.T) {
 	assert.Equal(t, "original", string(original))
 	options.Attempts = 2
 	options.Random = bytes.NewReader(bytes.Repeat([]byte{1}, tokenBytes*2))
-	_, err = Allocate(options, "repo", "release/1")
+	failed, err := Allocate(options, "repo", "release/1")
 	require.ErrorContains(t, err, "exhausted 2")
+	assert.Nil(t, failed)
 	options.Clock = func() time.Time { return first.CollectionTime.Add(-time.Hour) }
 	options.Random = bytes.NewReader(bytes.Repeat([]byte{3}, tokenBytes))
 	third := allocateTest(t, options, "repo", "release/1")
@@ -155,16 +166,52 @@ func TestAllocate_OperationalFailuresAndUnsafeLabels(t *testing.T) {
 
 func TestEnsureDirectories_RejectsSymlinksBeforeExternalWrites(t *testing.T) {
 	root, outside := t.TempDir(), t.TempDir()
-	require.NoError(t, EnsureDirectories(root, "provider/generated", "provider/results"))
+	err := EnsureDirectories(root, "provider/generated", "provider/results")
+	require.NoError(t, err)
+	require.DirExists(t, filepath.Join(root, "provider", "generated"))
 	require.DirExists(t, filepath.Join(root, "provider", "results"))
 	require.NoError(t, os.Symlink(outside, filepath.Join(root, "redirect")))
-	require.Error(t, EnsureDirectories(root, "redirect/generated"))
+	err = EnsureDirectories(root, "redirect/generated")
+	require.ErrorContains(t, err, "opening evaluation context")
 	entries, err := os.ReadDir(outside)
 	require.NoError(t, err)
 	require.Empty(t, entries)
 	for _, path := range []string{"../outside", outside} {
-		require.Error(t, EnsureDirectories(root, path))
+		err = EnsureDirectories(root, path)
+		require.ErrorContains(t, err, "workspace-relative")
 	}
+}
+
+func TestEnsureDirectories_PreservesExistingParentsAndContents(t *testing.T) {
+	root := t.TempDir()
+	parent := filepath.Join(root, "provider")
+	require.NoError(t, os.Mkdir(parent, DirectoryMode))
+	artifact := filepath.Join(parent, "existing.json")
+	require.NoError(t, os.WriteFile(artifact, []byte("retained"), FileMode))
+	before, err := os.Stat(parent)
+	require.NoError(t, err)
+	err = EnsureDirectories(root, "provider/generated", "provider/results")
+	require.NoError(t, err)
+	err = EnsureDirectories(root, "provider/generated", "provider/results")
+	require.NoError(t, err)
+	after, err := os.Stat(parent)
+	require.NoError(t, err)
+	assert.True(t, os.SameFile(before, after))
+	assert.Equal(t, before.Mode(), after.Mode())
+	data, err := os.ReadFile(artifact)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("retained"), data)
+	for _, name := range []string{"generated", "results"} {
+		info, err := os.Stat(filepath.Join(parent, name))
+		require.NoError(t, err)
+		assert.True(t, info.IsDir())
+	}
+	// Validate every requested path before creating any of them.
+	err = EnsureDirectories(root, "uncreated", "../outside")
+	require.ErrorContains(t, err, "workspace-relative")
+	assert.NoDirExists(t, filepath.Join(root, "uncreated"))
+	err = EnsureDirectories("relative", "provider")
+	require.ErrorContains(t, err, "root must be absolute")
 }
 
 func TestEvaluation_ReadWriteAndPrivateFinalization(t *testing.T) {

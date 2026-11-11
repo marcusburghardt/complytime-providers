@@ -333,6 +333,66 @@ write/close failure coverage rather than deleting the error-path protection.
   only; existing README, CHANGELOG and AGENTS feature/structure descriptions need
   no change for these additional test results.
 
+### In-scope Gaze remediation checkpoint (2026-11-11)
+
+- Following maintainer authorization, separated Ampel's per-evaluation allocation,
+  execution/parsing and retention/finalization from request orchestration in
+  `server/retention.go`. Named-result cleanup closes each evaluation on success or
+  failure and suppresses the RPC response on a handle-close failure. Existing
+  per-evaluation operational errors, publication-critical RPC errors, all-SKIP
+  handling, metadata warnings and retained evidence behavior are preserved.
+- Added regressions for continuing to a later spec after allocation/tool/parse
+  failures, retaining only that spec's evidence/metadata, redacting the access token
+  from response errors, preserving legacy files, and closing handles on success and
+  failure. Allocation-verification, digest, finalization and close failures stop
+  before later evaluations and return no response with the underlying error intact.
+- Made allocation success/error returns explicit in the collision/rollback test;
+  added concrete empty-directory, private-mode and collection-time assertions.
+  Directory tests now explicitly check returned errors, both created paths,
+  idempotence, existing parent identity/modes/content and validation before writes.
+  Shared storage production code and its filesystem guarantees are unchanged.
+- Focused Gaze v2.3.0 comparison against the unmodified committed baseline passes
+  with no new violations in Ampel server/shared evidence packages. Ampel `Scan`
+  reports CRAP 24.084 / GazeCRAP 24 (previously 33.2659 / 33); its new per-evaluation
+  helpers have complexity 6/4/2 and 100% line coverage. `Allocate` reports CRAP
+  24.2188 / GazeCRAP 23 (previously 89.125 GazeCRAP), and `EnsureDirectories` reports
+  10.3375 / 10 (previously 110 GazeCRAP). Both shared functions now have 100%
+  measured contract coverage. This resolves the three scoped new-function
+  violations, not the baseline path comparability issue or all historical scores.
+- Rebuilt all providers; `make test`, `go test -race -count=1 ./...`, `make lint`,
+  explicit pinned-config Go lint and changed-file goimports checks pass. Real
+  conftest isolation tests pass. Man pages regenerate without changes. The isolated
+  released-provider worktree was updated with these four implementation/test files;
+  its v1.2.0 dependency replacement build/tests and offline CLI/schema regressions
+  pass with the workflow's required `GOFLAGS=-mod=mod`. A first offline command
+  there omitted GOFLAGS and failed vendoring validation; no vendor files were
+  changed, and the corrected workflow-equivalent command passes.
+- The standalone all-provider consumer harness passes again, including 42 Gemara
+  JSON/YAML validations and 21 OSCAL conversions. A separate temporary modfile also
+  verifies it against isolated unchanged complyctl v1.2.0, avoiding sibling drift.
+- The user's sibling complyctl checkout/binary has independently moved to
+  `REVIEW_PR_967`, commit `a0e1a9ec476eadee25a8d4b0f1e0e27101c29049` (v1.2.0+dirty).
+  Running existing offline fixtures against that binary now fails host-side catalog
+  validation (`metadata.type` is Invalid, expected ControlCatalog), before provider
+  execution. Those CLI failures were not fixed or counted as passing; no sibling
+  source/build files were modified here. The same provider tests pass against the
+  separately retained v1.2.0 host binary. Direct conversion with the moved sibling
+  source also passes, which does not establish its CLI fixture compatibility.
+- Logs use `/tmp/opencode/retain-evidence-gaze-fix-*`. Full changed-package Gaze
+  initially exceeded a 120-second timeout. The bounded 600-second rerun completed:
+  `/tmp/opencode/retain-evidence-gaze-fix-ci-crap-final.json` contains exactly one
+  remaining violation, unchanged OpenSCAP `RuleResultMessage` at CRAP 72. The three
+  scoped functions retain the focused scores and 100% contract coverage. The full
+  comparison still exits 1 (`passed: false`), classifying 282 functions as new and
+  191 as removed because of the unresolved path comparability issue. No full CI
+  pass or genuine zero-regression baseline result is claimed. Tasks 5.3,
+  5.4 and 5.8 remain incomplete; no baseline, threshold, workflow gate, credential,
+  ownership policy or consumer fixture was changed. No PR, archive or push occurred.
+- Documentation impact: this is behavior-preserving internal decomposition and
+  regression coverage. README/CHANGELOG descriptions remain accurate; the extra
+  Ampel server file introduces no package, build target or convention requiring an
+  AGENTS structural update. Verification outcomes are recorded here.
+
 ### Remaining follow-up
 
 - Archive this change after implementation, verification, and review. Reconcile the

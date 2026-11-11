@@ -268,86 +268,23 @@ func (s *ProviderServer) Scan(_ context.Context, req *provider.ScanRequest) (*pr
 			AccessToken: accessToken,
 			Platform:    platform,
 		}
+		configuration := evidence.ConfigurationContext{PolicyPath: scanCfg.PolicyPath}
+		if targetScanConfig != nil {
+			configuration.RequirementIDs = targetScanConfig.RequirementIDs
+		}
+		if hasIndex {
+			configuration.ContentKey = filepath.Base(filepath.Dir(scanCfg.PolicyPath))
+		}
+		options := evaluationOptions{
+			targetID: target.TargetID, repository: repo, scanConfig: scanCfg,
+			configuration: configuration, storage: cfg.StorageOptions(identity),
+			runner: runner, remarks: hostRemark,
+		}
 
 		for _, branch := range branches {
 			for _, specRef := range specs {
-				specPath := scan.ResolveSpecPath(specRef, scanCfg.SpecDir)
-				logger.Info("scanning repository", "url", repoURL, "branch", branch, "spec", specRef)
-
-				evaluation, err := s.allocate(cfg.StorageOptions(identity), evidence.StripURLScheme(evidence.PublicContext(repoURL)), branch, specRef)
+				parsed, err := s.scanEvaluation(options, branch, specRef)
 				if err != nil {
-					var verification *evidence.VerificationError
-					if errors.As(err, &verification) {
-						return nil, err
-					}
-					repoResults = append(repoResults, &results.PerRepoResult{Repository: evidence.PublicContext(repoURL), Branch: branch, Status: "error", Error: err.Error()})
-					continue
-				}
-				scanCfg.Evaluation = evaluation
-				rawResult, err := scan.ScanRepository(repo, branch, specPath, scanCfg, runner)
-				if err != nil {
-					if closeErr := evaluation.Close(); closeErr != nil {
-						return nil, closeErr
-					}
-					logger.Error("scan failed", "repo", repoURL, "branch", branch, "spec", specRef, "error", err)
-					errResult := &results.PerRepoResult{
-						Repository: repoURL,
-						Branch:     branch,
-						Status:     "error",
-						Error:      publicOperationalError(err, accessToken),
-					}
-					repoResults = append(repoResults, errResult)
-					continue
-				}
-
-				parsed, err := results.ParseAmpelOutput(rawResult.Output, repoURL, branch)
-				if err != nil {
-					if closeErr := evaluation.Close(); closeErr != nil {
-						return nil, closeErr
-					}
-					logger.Error("failed to parse scan output", "repo", repoURL, "error", err)
-					errResult := &results.PerRepoResult{
-						Repository: repoURL,
-						Branch:     branch,
-						Status:     "error",
-						Error:      publicOperationalError(err, accessToken),
-					}
-					repoResults = append(repoResults, errResult)
-					continue
-				}
-				if targetScanConfig != nil {
-					parsed.RequirementIDs = targetScanConfig.RequirementIDs
-				}
-
-				// All-SKIP detection: when every finding skipped, no policy's
-				// declared predicate types matched the attestation. This is a
-				// misconfiguration, not a valid scan result (Decision 3).
-				// Clear findings so ToScanResponse routes the result to
-				// operational errors (status "error" + no findings).
-				if parsed.AllFindingsSkipped() {
-					parsed.Status = "error"
-					parsed.Error = "all policies were skipped: " +
-						"no policies matched the attestation predicate type"
-					parsed.Findings = nil
-				}
-
-				parsed.ScannedAt = evaluation.CollectionTime
-				parsed.Repository = evidence.PublicContext(parsed.Repository)
-				parsed.SpecLabel = evidence.PublicContext(specRef)
-				if err := finalizeEvaluation(evaluation, parsed, hostRemark); err != nil {
-					return nil, errors.Join(err, evaluation.Close())
-				}
-				configuration := evidence.ConfigurationContext{SpecReference: specRef, SpecPath: specPath, PolicyPath: scanCfg.PolicyPath}
-				if targetScanConfig != nil {
-					configuration.RequirementIDs = targetScanConfig.RequirementIDs
-				}
-				if hasIndex {
-					configuration.ContentKey = filepath.Base(filepath.Dir(scanCfg.PolicyPath))
-				}
-				evaluation.RecordMetadata(logger, config.ProviderDir, evidence.TargetContext{
-					TargetKey: evidence.RemoteTargetKey(repoURL), TargetID: target.TargetID, URL: repoURL, Branch: branch,
-				}, configuration)
-				if err := errors.Join(evaluation.Finalize(), evaluation.Close()); err != nil {
 					return nil, err
 				}
 				repoResults = append(repoResults, parsed)
