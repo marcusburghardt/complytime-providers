@@ -393,6 +393,47 @@ write/close failure coverage rather than deleting the error-path protection.
   Ampel server file introduces no package, build target or convention requiring an
   AGENTS structural update. Verification outcomes are recorded here.
 
+### Upstream verification findings (2026-11-11)
+
+- Rechecked the pinned reusable workflow's install command: it uses
+  `github.com/unbound-force/gaze/cmd/gaze@latest`, which currently resolves to
+  v1.9.0, not the separately installed v2.3.0. Installed v1.9.0 only beneath
+  `/tmp/opencode/retain-evidence-ci-gaze-v1/`; the normal Gaze binary is unchanged.
+  Its changed-package comparison uses the existing post-remediation coverage
+  profile and unmodified committed baseline. It exits 1 with `passed: false`,
+  282 new functions, 191 removed, zero matched functions and one new violation.
+  Results: `/tmp/opencode/retain-evidence-ci-gaze-v1-crap.json` and `.err`.
+  This reproduces the v2 result with the workflow-selected version; it is not
+  a fresh coverage run or a passing CI comparison.
+- Both versions relativize report paths but compare literal file/function keys
+  against the historical absolute paths. Confirmed `RuleResultMessage`'s full
+  function body is byte-identical to merge base
+  `4040a669897da2f37fef8849a1e3af71966daf9b`; its baseline and current complexity 8,
+  zero measured package coverage and CRAP 72 agree. Classify that score as
+  pre-existing, not an in-scope retention regression. The path mismatch still
+  prevents a reliable whole-report regression comparison. With user authorization,
+  reported [Gaze #330](https://github.com/unbound-force/gaze/issues/330) rather than
+  rewriting the baseline or changing thresholds.
+- Confirmed a separate false-pass bug in pinned and current org-infra workflow:
+  `.comparison.passed // true` converts an explicit `false` to `true`. The workflow
+  suppresses the Gaze exit code and derives its enforcement status from this
+  expression. Applying it to the failing v1 report returns `true`; this is not
+  acceptable passing verification. Reported
+  [org-infra #738](https://github.com/complytime/org-infra/issues/738). No workflow,
+  gate, baseline or settings were changed in this provider feature.
+- Classified the historical MegaLinter report at `366b7db` by exact-line provenance
+  against the merge base: 105 findings occur on unchanged lines, and 10 on
+  branch-added/modified lines (nine MD013 and one MD046). This is not a fresh lint
+  run or a complete causality analysis. The MD046 location is an indented list in
+  the OPA man page's Pandoc definition list; do not blindly rewrite its semantics.
+  Details: `/tmp/opencode/retain-evidence-markdown-provenance.json`. No formatting
+  fixes were made after the user directed out-of-scope issues upstream.
+- Tasks 5.3/5.4/5.8 remain incomplete. Credentialed integration and controlled
+  host-root ownership/read/hash checks remain unauthorized/unrun; `GITHUB_TOKEN`
+  is unset. No sibling edits, agent dispatch, PR, push or archive occurred.
+  Documentation impact: verification bookkeeping and upstream links only; no
+  README, CHANGELOG or AGENTS feature/structure change is needed.
+
 ### Remaining follow-up
 
 - Archive this change after implementation, verification, and review. Reconcile the
