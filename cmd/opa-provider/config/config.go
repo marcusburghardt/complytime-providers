@@ -97,6 +97,16 @@ func (c *Config) EnsureDirectories() error {
 		c.GeneratedDirPath(),
 	}
 	for _, dir := range directories {
+		if c.WorkspaceRoot != "" {
+			relative, err := filepath.Rel(c.WorkspaceRoot, dir)
+			if err != nil {
+				return fmt.Errorf("resolving provider directory: %w", err)
+			}
+			if err := evidence.EnsureDirectories(c.WorkspaceRoot, relative); err != nil {
+				return fmt.Errorf("creating directory %s: %w", dir, err)
+			}
+			continue
+		}
 		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("creating directory %s: %w", dir, err)
 		}

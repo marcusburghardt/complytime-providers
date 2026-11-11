@@ -42,7 +42,7 @@ func TestScan_VersionMetadataDoesNotGateLocalOrRemoteEvaluation(t *testing.T) {
 					require.Equal(t, "test", args[0])
 					return []byte(conftestAllSuccessJSON), nil
 				}}
-				srv := New(ServerOptions{
+				srv := newWorkspaceTestServer(t, ServerOptions{
 					Runner: runner, WorkspaceDir: workspace,
 					Loader:      &mockLoader{loadFn: func(provider.Target, string) (string, error) { return file, nil }},
 					ToolChecker: func() ([]string, error) { return nil, nil },
@@ -89,7 +89,7 @@ func TestScan_SeparatedConftestStreams(t *testing.T) {
 				}
 				return scan.CommandOutput{Stdout: []byte(scenario.stdout), Stderr: []byte(scenario.stderr)}, err
 			}}
-			srv := New(ServerOptions{Runner: runner, WorkspaceDir: workspace,
+			srv := newWorkspaceTestServer(t, ServerOptions{Runner: runner, WorkspaceDir: workspace,
 				ToolChecker: func() ([]string, error) { return nil, nil }})
 			target := localTarget(t, input, "")
 			response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{target}))
@@ -142,7 +142,7 @@ func TestScan_DirectoryRequiresEvidenceOfEvaluation(t *testing.T) {
 				opts.Loader = &mockLoader{loadFn: func(provider.Target, string) (string, error) { return input, nil }}
 				target = remoteTarget("", "https://example.com/org/repo")
 			}
-			srv := New(opts)
+			srv := newWorkspaceTestServer(t, opts)
 			response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{target}))
 			require.NoError(t, err)
 			if test.valid {
@@ -170,7 +170,7 @@ func TestScan_RejectedWorkspaceTargetPreservesValidTarget(t *testing.T) {
 	require.NoError(t, os.WriteFile(unsafeFile, []byte("{}"), 0600))
 	require.NoError(t, os.WriteFile(validFile, []byte("{}"), 0600))
 	runner := conftestRunner(conftestAllSuccessJSON)
-	srv := New(ServerOptions{Runner: runner, WorkspaceDir: workspace,
+	srv := newWorkspaceTestServer(t, ServerOptions{Runner: runner, WorkspaceDir: workspace,
 		ToolChecker: func() ([]string, error) { return nil, nil }})
 	rejected := localTarget(t, unsafeFile, "")
 	rejected.TargetID = "rejected-target"
@@ -200,7 +200,7 @@ func TestScan_InvalidDirectoryOutputIsOperational(t *testing.T) {
 			writeScanConfig(t, workspace)
 			input := t.TempDir()
 			runner := conftestRunner(output)
-			srv := New(ServerOptions{
+			srv := newWorkspaceTestServer(t, ServerOptions{
 				Runner: runner, WorkspaceDir: workspace,
 				ToolChecker: func() ([]string, error) { return nil, nil },
 			})
@@ -227,7 +227,7 @@ func TestScan_ConftestExecutionFailureDoesNotClaimEmptyInput(t *testing.T) {
 			runner := &mockRunner{callFn: func(string, []string) ([]byte, error) {
 				return []byte(diagnostic), errors.New("exit status 1")
 			}}
-			srv := New(ServerOptions{Runner: runner, WorkspaceDir: workspace,
+			srv := newWorkspaceTestServer(t, ServerOptions{Runner: runner, WorkspaceDir: workspace,
 				ToolChecker: func() ([]string, error) { return nil, nil }})
 			target := localTarget(t, input, "")
 			response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{target}))
@@ -251,7 +251,7 @@ func TestScan_NoFilesSentinelRequiresDirectoryInput(t *testing.T) {
 	runner := &mockRunner{callFn: func(string, []string) ([]byte, error) {
 		return []byte(conftestNoFilesFound + "\n"), errors.New("exit status 1")
 	}}
-	srv := New(ServerOptions{Runner: runner, WorkspaceDir: workspace,
+	srv := newWorkspaceTestServer(t, ServerOptions{Runner: runner, WorkspaceDir: workspace,
 		ToolChecker: func() ([]string, error) { return nil, nil }})
 	target := localTarget(t, input, "")
 	response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{target}))
@@ -270,7 +270,7 @@ func TestScan_NoFilesSentinelOnDirectoryReportsRemedy(t *testing.T) {
 	runner := &mockRunner{callFn: func(string, []string) ([]byte, error) {
 		return []byte(conftestNoFilesFound + "\n"), errors.New("exit status 1")
 	}}
-	srv := New(ServerOptions{Runner: runner, WorkspaceDir: workspace,
+	srv := newWorkspaceTestServer(t, ServerOptions{Runner: runner, WorkspaceDir: workspace,
 		ToolChecker: func() ([]string, error) { return nil, nil }})
 	target := localTarget(t, input, "")
 	response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{target}))
@@ -294,7 +294,7 @@ func TestScan_EmptyTargetDoesNotSuppressOtherAssessments(t *testing.T) {
 		}
 		return []byte(conftestAllSuccessJSON), nil
 	}}
-	srv := New(ServerOptions{
+	srv := newWorkspaceTestServer(t, ServerOptions{
 		Runner: runner, WorkspaceDir: workspace,
 		ToolChecker: func() ([]string, error) { return nil, nil },
 	})

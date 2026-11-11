@@ -4,6 +4,9 @@
 
 ### Added
 
+- **opa-provider**: Preserve exact conftest JSON output for every local or remote
+  evaluation, with result-file SHA256 digests, collection-start timestamps, private
+  execution-account-owned storage and best-effort target/configuration metadata.
 - **openscap-provider**: Preserve independent ARF and supporting XCCDF outputs for
   each executed system evaluation, with matching digests, collection-start timestamps,
   private execution-account-owned storage and best-effort target/profile metadata.
@@ -15,7 +18,7 @@
   artifact-instance references and supporting metadata helpers for provider integration.
 - **ampel-provider**: Added `WhenClause` type support for ampel policy serialization. Policies with `when:` guard predicates can now be loaded, merged, and written without losing the `when` field during round-trip.
 - **ampel-provider**: Added version guard that verifies ampel >= 1.4.2 at `Generate`/`Scan` time. Produces an actionable error message when an older ampel version is detected, instead of confusing partial failures from unrecognized CLI flags.
-- **all providers**: Populated `Evidence` entries on every `AssessmentLog` returned in `ScanResponse`, enabling auditors to trace each compliance assessment result back to the artifact that produced it. OpenSCAP attaches ARF file evidence with SHA256 digest, Ampel attaches both snappy and ampel in-toto attestation evidence with digests, and OPA attaches conftest input path evidence. Each provider now also declares `MappingReferences` on `ScanResponse` linking evidence to their source artifacts.
+- **all providers**: Populate `Evidence` entries on each returned `AssessmentLog`, with SHA256 digests and linked `MappingReferences`: OpenSCAP ARF files, Ampel's two in-toto attestations, and OPA's retained conftest JSON result files. Evaluation-qualified identities distinguish retained artifacts across scans.
 - **internal/evidence**: New shared package providing `FileDigest()` for SHA256 file hashing, `HostRemark()` for host identification in evidence remarks (using hostname and `/etc/machine-id`), and centralized evidence type/ID constants used across all three providers. The machine-id file path is configurable via the `COMPLYTIME_MACHINE_ID_FILE` environment variable.
 
 ### Fixed
@@ -42,6 +45,8 @@
 
 ### Documentation
 
+- Document OPA's result-file evidence, workspace/configuration lookup, replaceable
+  inputs, growing storage/preflight work, private access and upgrade/rollback behavior.
 - Document OpenSCAP's retained target/profile layout, selected-workspace lookup,
   private/root-run access, evidence verification and upgrade/rollback behavior.
 - Document Ampel's retained evidence layout, workspace-relative coordinates, private
@@ -59,6 +64,13 @@
 
 ### Breaking Changes
 
+- **opa-provider**: Evidence now identifies retained `conftest.json`, not inputs,
+  with SHA256 for every target type. Output paths and IDs are evaluation-qualified
+  (`conftest_<token>` / `conftest-result_<token>`) without fixed-path aliases.
+  Coordinates and relative inputs/configuration use the selected workspace rather
+  than invocation CWD. Normalized summaries are no longer written. Absolute `file://`
+  URL representation is retained; legacy artifacts and logs remain untouched.
+  (Specs: `retain-scan-evidence/evidence-source` and `scan-artifact-retention`.)
 - **openscap-provider**: Scan paths and evidence/reference IDs are evaluation-qualified
   without fixed-path aliases. Coordinates and relative datastream configuration use
   the selected workspace, not invocation CWD. Absolute `file://` URL representation
@@ -70,7 +82,7 @@
   aliases. Normalized per-repository summaries are no longer written. Absolute
   `file://` URL representation is retained; legacy files and logs remain untouched.
   (Specs: `retain-scan-evidence/evidence-source` and `scan-artifact-retention`.)
-- **opa-provider**: Local directory scans exclude workspace files, including user-owned files, from results. The excluded boundaries are the host-injected workspace base joined with `.complytime` and, when different, the provider's configured artifact directory (normally `.complytime` relative to its working directory). If the host supplies no base, the provider uses the configured directory. (Fixes #231; Spec: `openspec/changes/opa-exclude-workspace-from-input/`)
+- **opa-provider**: Local directory scans exclude workspace files, including user-owned files, from results. Boundaries protect the selected workspace's `.complytime` and a configured provider artifact directory when different, including an existing invocation-relative default. Missing/empty RPC workspace variables use provider CWD as the output/coordinate root. (Fixes #231; Specs: `openspec/changes/opa-exclude-workspace-from-input/` and `retain-scan-evidence/evidence-source`.)
 - **opa-provider**: Explicit local workspace files and directories now produce an operational error. To evaluate intended input, copy it outside both workspace boundaries and select the copy; do not use a hard link. The provider also rejects unsafe symlinks and hard links encountered while inspecting selected input, including remote clone links or files that reach other workspace content, unresolved links, and cycles. Non-cyclic links inside the selected remote clone remain eligible. Exclusion does not prune traversal, and preflight is not a sandbox against concurrent filesystem changes.
 - **opa-provider**: Empty or fully ignored local directories and remote clones or scan paths with no confirmed evaluated input produce an operational error and no assessments for that target instead of a synthetic pass. Add a supported file or adjust the effective ignore rule; other targets retain their results.
 - **opa-provider**: An overlapping local directory is rejected when `CONFTEST_IGNORE` is empty or unset and an applicable conftest configuration file exists, or its presence cannot be determined. Select a non-overlapping target or set `CONFTEST_IGNORE` to the effective rule, including the file's existing `ignore` value; if the file defines none, use `^$`. Other conftest settings continue to apply.
