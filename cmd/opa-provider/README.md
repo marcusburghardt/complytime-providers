@@ -246,7 +246,9 @@ evidence cannot be recovered. Older binaries resume overwrite behavior after
 rollback, while retained evaluation directories remain readable by authorized users.
 
 See the [OPA man page](../../docs/man/complyctl-provider-opa.md#evidence) for the
-evidence contract and [input-safety guidance](../../docs/man/complyctl-provider-opa.md#selecting-scan-input).
+evidence contract and [input-safety guidance](../../docs/man/complyctl-provider-opa.md#selecting-scan-input),
+and the [shared evidence workflow](../../README.md#preserve-and-verify-scan-evidence)
+for workspace discovery and log/file transfer guidance.
 
 ## Installation
 

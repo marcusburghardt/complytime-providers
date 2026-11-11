@@ -181,8 +181,9 @@ capabilities, not implemented here. Storage backends and longevity remain custom
 **Breaking upgrade behavior:** paths and evidence/reference IDs are now evaluation-qualified,
 without fixed-path aliases. Relative input/configuration lookup now uses the selected
 workspace rather than invocation CWD; migrate invocation-relative configurations.
-Existing fixed-path outputs and historical logs remain untouched and are not migrated;
-already overwritten evidence cannot be recovered. Older binaries resume overwrite
+Existing fixed-path outputs stop being refreshed; they and historical logs remain
+untouched and are not migrated. Already overwritten evidence cannot be recovered.
+Older binaries resume overwrite
 behavior on rollback while retained evaluation directories remain readable by authorized users.
 
 # EXIT CODES

@@ -338,7 +338,9 @@ func TestScan_WorkspaceIgnoreWithConftest(t *testing.T) {
 	require.NoError(t, generate.WriteScanConfig(
 		cfg.GeneratedDirPath(), []string{"main"}, map[string]string{"main": "test-req"}, policyDir,
 	))
-	for _, path := range []string{filepath.Base(input), input} {
+	relativeInput, err := filepath.Rel(workspace, input)
+	require.NoError(t, err)
+	for _, path := range []string{relativeInput, input} {
 		t.Run(path, func(t *testing.T) {
 			srv := newWorkspaceTestServer(t, ServerOptions{
 				WorkspaceDir: workspace,

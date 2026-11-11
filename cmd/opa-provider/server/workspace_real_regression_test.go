@@ -25,6 +25,7 @@ import (
 type realConftestCall struct {
 	args   []string
 	output []byte
+	stderr []byte
 	err    error
 }
 
@@ -68,7 +69,9 @@ func (runner *recordingRealRunner) execute(env []string, name string, args []str
 		}
 	}
 	if name == "conftest" && len(actualArgs) > 0 && actualArgs[0] == "test" {
-		runner.calls = append(runner.calls, realConftestCall{args: actualArgs, output: output.Stdout, err: err})
+		runner.calls = append(runner.calls, realConftestCall{
+			args: actualArgs, output: output.Stdout, stderr: output.Stderr, err: err,
+		})
 	}
 	return output, err
 }
@@ -105,6 +108,7 @@ func isolateRealConftest(t *testing.T, base string) {
 
 func realPolicyFixture(t *testing.T, workspace, policyDir string) {
 	t.Helper()
+	require.NoError(t, os.MkdirAll(workspace, 0750))
 	require.NoError(t, os.MkdirAll(policyDir, 0750))
 	require.NoError(t, os.WriteFile(filepath.Join(policyDir, "policy.rego"), []byte(
 		"package main\ndeny contains input.marker if input.blocked == true\n"), 0600))
@@ -190,7 +194,9 @@ func TestScan_RealConftestWorkspaceIsolation(t *testing.T) {
 	runner := &recordingRealRunner{}
 	srv := newWorkspaceTestServer(t, ServerOptions{Runner: runner, WorkspaceDir: workspace,
 		ToolChecker: func() ([]string, error) { return nil, nil }})
-	for index, path := range []string{filepath.Base(input), input, input} {
+	relativeInput, err := filepath.Rel(workspace, input)
+	require.NoError(t, err)
+	for index, path := range []string{relativeInput, input, input} {
 		t.Run(fmt.Sprintf("scan-%d", index+1), func(t *testing.T) {
 			runner.calls = nil
 			response, err := srv.Scan(context.Background(), makeScanRequest(t, []provider.Target{
@@ -259,7 +265,7 @@ func TestScan_RealConftestWorkspaceIsolation(t *testing.T) {
 			assert.Empty(t, response.Assessments)
 			require.Len(t, runner.calls, 1)
 			require.Error(t, runner.calls[0].err)
-			assert.Contains(t, string(runner.calls[0].output), "no files found")
+			assert.Contains(t, string(runner.calls[0].stderr), "no files found")
 		})
 	}
 }

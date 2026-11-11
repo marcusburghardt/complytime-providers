@@ -197,8 +197,9 @@ complyctl capabilities. Any moved artifacts need mapping to their original refer
 without rewriting the log. Absolute URLs remain origin-specific after relocation;
 workspace-relative coordinates can resolve against a copied, layout-preserving root.
 
-Upgrade leaves legacy files/logs unchanged and cannot recover evidence overwritten
-before upgrade. Rollback to an older provider resumes its overwrite behavior for
+Upgrade stops refreshing fixed-path outputs, leaves legacy files/logs unchanged
+without migration and cannot recover evidence overwritten before upgrade.
+Rollback to an older provider resumes its overwrite behavior for
 new scans; retained evaluation directories remain readable by authorized readers.
 
 # EXIT CODES

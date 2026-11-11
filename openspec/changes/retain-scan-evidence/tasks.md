@@ -157,7 +157,7 @@ error while adding the new finalization errors from D6/D9.
 ## 5. Integration verification and release readiness
 
 - [x] 5.1 Add three-scan regressions in each provider's `server/server_test.go`, using the test harness above with changing and identical fixture outputs. Seed legacy fixed-path artifacts and summaries with known bytes; resolve every `ScanResponse` coordinate against an explicit workspace root, verify its escaped absolute file URL identifies the same artifact, recompute each `sha256:` digest, and assert evaluation-qualified IDs and matching reference links. Verify earlier artifacts and legacy files remain unchanged without packaging or storage integration, and that supporting XCCDF/metadata files do not become implicit evidence. Copy the workspace tree and verify coordinates/digests against the copied root while absolute URLs remain unchanged and origin-specific; keep these contract tests runnable under `make test` without credentials or a complyctl checkout.
-- [ ] 5.2 Verify the existing complyctl conversion preserves coordinates, digests, timestamps, absolute file URLs, and instance references in serialized Gemara Evaluation Logs. Validate converted logs against the applicable Gemara schema and exercise a downstream consumer; verify repeated evaluations do not lose references through deduplication and every reported evidence entry leads to its original file with the matching digest after later scans, without inferring extra evidence from directory contents.
+- [x] 5.2 Verify the existing complyctl conversion preserves coordinates, digests, timestamps, absolute file URLs, and instance references in serialized Gemara Evaluation Logs. Validate converted logs against the applicable Gemara schema and exercise a downstream consumer; verify repeated evaluations do not lose references through deduplication and every reported evidence entry leads to its original file with the matching digest after later scans, without inferring extra evidence from directory contents.
 - [ ] 5.3 Run `openspec validate retain-scan-evidence --strict`, `make build`, `make test`, `go test -race -count=1 ./...`, `make lint`, `make man`, and `git diff --check`; the race run includes shared concurrent-allocation tests and is an additional local convention-pack check, not currently provided by `ci_local.yml`. Inspect applicable workflows and pinned reusable definitions for additional local CI parity checks, recording external prerequisites rather than claiming unrun checks passed.
   Also run PR #233's installed-conftest isolation and offline CLI regressions with
   rebuilt binaries, using the commands and prerequisites in `AGENTS.md`. Record
@@ -178,7 +178,7 @@ error while adding the new finalization errors from D6/D9.
   root execution ownership/private modes and authorized elevated read/hash; normal
   user scans remain user-owned. No original-user handoff or companion release is
   required, and no skipped privileged test counts as verification.
-- [ ] 5.5 Update root `README.md`, `cmd/*-provider/README.md`, and all provider man pages with the selected workspace root as the coordinate base and absolute `file://` URLs as originating-filesystem locators. Document workspace precedence, how to locate the root, URI escaping, and the in-place workflow of reading the log's evidence mappings, resolving files, and checking digests without packaging. Explain that the Gemara Evaluation Log alone defines the evidence set, supporting files are not implicitly evidence, preservation is always on without automatic cleanup or retention settings, and future optional collection/packaging must map moved files without rewriting the log. State that storage backends and longevity remain customer-owned and absolute URLs do not automatically relocate; verify examples and regenerate affected man pages.
+- [x] 5.5 Update root `README.md`, `cmd/*-provider/README.md`, and all provider man pages with the selected workspace root as the coordinate base and absolute `file://` URLs as originating-filesystem locators. Document workspace precedence, how to locate the root, URI escaping, and the in-place workflow of reading the log's evidence mappings, resolving files, and checking digests without packaging. Explain that the Gemara Evaluation Log alone defines the evidence set, supporting files are not implicitly evidence, preservation is always on without automatic cleanup or retention settings, and future optional collection/packaging must map moved files without rewriting the log. State that storage backends and longevity remain customer-owned and absolute URLs do not automatically relocate; verify examples and regenerate affected man pages.
 
   Explicitly distinguish preserving or uploading the Evaluation Log from preserving
   and transferring its referenced files: a log-only upload does not transfer the
@@ -199,8 +199,8 @@ error while adding the new finalization errors from D6/D9.
   both storage and preflight work grow. Inaccessible private historical directories
   can cause actionable fail-closed input errors; do not suggest widening permissions
   or deleting evidence as an automatic remedy.
-- [ ] 5.6 Document upgrade and rollback behavior in README and provider man pages: fixed-path outputs stop being refreshed, existing files and historical logs remain untouched and are not migrated, previously overwritten evidence cannot be recovered, and older binaries resume overwrite behavior while retained directories remain readable. Verify this guidance against the design's Migration Plan and regenerate affected man pages.
-- [ ] 5.7 Add CHANGELOG entries under `Breaking Changes` for OPA result-file evidence, new output paths and instance-qualified IDs without fixed-path aliases, workspace-root-relative coordinates, and discontinued Ampel/OPA normalized summaries; record retained evidence under `Added` and updated guidance under `Documentation`. State that absolute `file://` URL representation is retained and legacy files and logs remain untouched, complete the AGENTS structural assessment from 1.5, confirm README and all man pages match the implemented layout, and file the required `unbound-force/website` issue before implementation merge; verify entries and the issue describe shipped behavior and local preservation/mapping, not an implemented collection, packaging, or managed retention feature.
+- [x] 5.6 Document upgrade and rollback behavior in README and provider man pages: fixed-path outputs stop being refreshed, existing files and historical logs remain untouched and are not migrated, previously overwritten evidence cannot be recovered, and older binaries resume overwrite behavior while retained directories remain readable. Verify this guidance against the design's Migration Plan and regenerate affected man pages.
+- [x] 5.7 Add CHANGELOG entries under `Breaking Changes` for OPA result-file evidence, new output paths and instance-qualified IDs without fixed-path aliases, workspace-root-relative coordinates, and discontinued Ampel/OPA normalized summaries; record retained evidence under `Added` and updated guidance under `Documentation`. State that absolute `file://` URL representation is retained and legacy files and logs remain untouched, complete the AGENTS structural assessment from 1.5, confirm README and all man pages match the implemented layout, and file the required `unbound-force/website` issue before implementation merge; verify entries and the issue describe shipped behavior and local preservation/mapping, not an implemented collection, packaging, or managed retention feature.
 
   Supersede conflicting Unreleased claims about OPA input-path evidence and old ID
   forms so the release does not announce incompatible contracts as current at once.
@@ -218,6 +218,68 @@ summary writers and replace their failure-propagation tests with required-artifa
 write/close failure coverage rather than deleting the error-path protection.
 
 ## Workflow follow-up
+
+### Verification checkpoint (2026-11-11)
+
+- 5.4 partial: `TestComplyctlScan_OfflineRetainedEvidence` exercises unchanged
+  complyctl `ebed460cb55e79e9c4d8f1189ef3286e0e6a218e` (v1.1.0 build) with rebuilt
+  OPA provider and real conftest 0.68.2 / OPA 1.15.2. Offline Generate and three
+  successive Scans pass default/environment/flag workspace selection, invocation A
+  with workspace B and flag-over-environment precedence. Serialized JSON/YAML logs
+  preserve instance references, coordinates, SHA256, collection-start timestamps and
+  escaped absolute URLs; earlier evidence still verifies after subsequent scans.
+  Tests verify normal execution UID/GID and 0700/0600 modes. Unchanged OSCAL conversion
+  accepts these logs and preserves source coordinates/digests/reference URLs.
+- Opt-in `GEMARA_CUE_TEST_MODULE=github.com/gemaraproj/gemara@v1.6.0` validates all
+  nine serialized OPA log snapshots with cue v0.17.1, using the schema module selected
+  by the unchanged host's schema-validation helper. These are tested versions, not
+  new runtime version floors.
+- 5.2 complete: an isolated consumer harness at
+  `/tmp/opencode/retain-evidence-consumer/` uses local module replacements, without
+  changing either repository's dependencies, to exercise the actual three provider
+  servers with deterministic mock tools and unchanged complyctl conversion code.
+  `go test -mod=mod -race -count=1 -v ./...` passes there. For each provider, three
+  changing/identical evaluations with two assessments each retain original files;
+  earlier responses are re-converted after later scans and combined into one log.
+  All 42 JSON/YAML log serializations validate against Gemara v1.6.0, preserve exact
+  source fields/timestamps and resolve every digest/URL. All 21 unchanged OSCAL
+  conversions pass their internal OSCAL schema validation and preserve source
+  coordinates/digests/reference URLs. Same-log deduplication preserves six distinct
+  Ampel artifact references and three each for OpenSCAP/OPA, while assessments share
+  each evaluation's files. Unreferenced supporting files do not enter the log.
+  This tests host conversion, not real Ampel/OpenSCAP execution or privileged access.
+- Installed-conftest isolation tests pass without version-based gates/skips. Updated
+  previously skipped fixtures create their workspace roots, resolve relative inputs
+  against that root and check no-files diagnostics on stderr. Existing alias,
+  workspace exclusion, empty-input and ignore-precedence behavior assertions remain.
+  Existing offline operational-error and distinct-workspace-boundary tests pass.
+- Full `make test-cross-repo COMPLYCTL_DIR=<unchanged-built-checkout>` was attempted
+  with rebuilt providers and real tools but stopped at the harness's unset
+  `GITHUB_TOKEN` prerequisite. The unchanged harness also still asserts legacy fixed
+  Ampel paths; this provider-local change does not modify that consumer repository.
+  Controlled host-root integration remains unrun; injected/root-identity unit tests
+  and normal-account ownership checks do not substitute for it.
+- 5.5–5.7 documentation is consolidated and man pages regenerated. Website follow-up:
+  [unbound-force/website#407](https://github.com/unbound-force/website/issues/407).
+  AGENTS structural assessment: no additional production packages or build targets;
+  the opt-in schema-test command/prerequisites are documented. CHANGELOG supersedes
+  old OPA input-evidence claims and records tested integration versus pending checks.
+- 5.3 partial: `make build`, `make test`, `go test -race -count=1 ./...`, `make lint`,
+  `make man`, strict OpenSpec validation and whitespace checks pass locally. The
+  unit/race suites now have conftest on PATH rather than skipping its behavior tests;
+  the separate offline CLI/schema command passes with all three binary variables.
+  All three released-baseline shell suites, shellcheck and cross-repo workflow
+  yamllint also pass. Tests/scripts/workflows and quality gates were not weakened.
+- Inspected pinned org-infra `8f347ba1aa2c7e9eb3b70e69c1709ddb456cd64a` definitions
+  for reusable CI and CRAP analysis. Explicit lint using its fallback `.golangci.yml`
+  (standard linters plus gosec) passes; changed Go files also pass goimports checking.
+  Full MegaLinter v10.1.0 execution, pinact remote action verification/freshness,
+  PR-title validation and Gaze baseline/report analysis remain unrun. Those require
+  their container/tool/remote or PR context; no baseline/settings/gates were created
+  or changed to substitute for the pinned workflow. Released-baseline build/test and
+  credentialed integration jobs remain unverified. 5.3 stays incomplete.
+
+### Remaining follow-up
 
 - Archive this change after implementation, verification, and review. Reconcile the
   existing untracked synchronized specs before updating canonical specs at archive.

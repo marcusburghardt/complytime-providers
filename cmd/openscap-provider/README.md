@@ -449,8 +449,9 @@ backends, transfers and longevity remain customer-owned.
 
 **Breaking upgrade/rollback:** output paths and IDs are evaluation-qualified, with
 no fixed-path aliases; relative input/configuration lookup uses the selected workspace
-rather than invocation CWD. Existing fixed-path results and historical logs remain
-untouched and are not migrated. Previously overwritten evidence cannot be recovered.
+rather than invocation CWD. Existing fixed-path results stop being refreshed; they
+and historical logs remain untouched and are not migrated. Previously overwritten
+evidence cannot be recovered.
 Older binaries resume overwriting their fixed paths on rollback, while retained
 directories remain readable by authorized users. Preserve logs and referenced files
 before any deliberate workspace removal.

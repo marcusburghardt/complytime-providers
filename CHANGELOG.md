@@ -45,6 +45,17 @@
 
 ### Documentation
 
+- Add the shared in-place evidence-verification and log/file transfer workflow,
+  workspace discovery, access/capacity troubleshooting and upgrade/rollback guidance.
+  Local preservation does not implement collection, packaging or managed retention.
+- Verify retained OPA evidence with unchanged complyctl revision
+  `ebed460cb55e79e9c4d8f1189ef3286e0e6a218e` (v1.1.0 build), including workspace
+  selection, serialized JSON/YAML Evaluation Logs, Gemara v1.6.0 schema validation
+  and downstream OSCAL consumption. No new complyctl API or paired release is required.
+  An isolated mocked-tool harness also verifies all three provider servers through
+  the unchanged host's conversion, reference merging, Gemara schema and OSCAL paths.
+  Full credentialed cross-repo and controlled host-root integration remain unverified.
+  Website follow-up: [unbound-force/website#407](https://github.com/unbound-force/website/issues/407).
 - Document OPA's result-file evidence, workspace/configuration lookup, replaceable
   inputs, growing storage/preflight work, private access and upgrade/rollback behavior.
 - Document OpenSCAP's retained target/profile layout, selected-workspace lookup,

@@ -46,6 +46,12 @@ go test -race -count=1 ./cmd/opa-provider/server -run '^TestScan_(RealConftest|.
 # and CONFTEST_TEST_BINARY to absolute paths of the prebuilt binaries first.
 go test -race -count=1 ./cmd/opa-provider/server -run '^TestComplyctlScan_Offline'
 
+# Also validate the retained-evidence CLI test's JSON/YAML logs against Gemara.
+# Uses the same binary prerequisites above, plus cue and schema-registry access.
+GEMARA_CUE_TEST_MODULE=github.com/gemaraproj/gemara@v1.6.0 \
+  go test -race -count=1 ./cmd/opa-provider/server \
+  -run '^TestComplyctlScan_OfflineRetainedEvidence$'
+
 # Run linter (golangci-lint with default config)
 make lint
 

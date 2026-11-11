@@ -179,11 +179,13 @@ moved files require mapping to original references without rewriting the log.
 Coordinates can resolve against a copied workspace with its layout preserved;
 absolute URLs still describe the originating filesystem and do not relocate.
 
-Upgrade leaves legacy files and historical logs untouched, without migration or
-recovery of already overwritten evidence. Older binaries resume overwrite behavior
+Upgrade stops refreshing fixed-path outputs and leaves legacy files and historical
+logs untouched, without migration or recovery of already overwritten evidence.
+Older binaries resume overwrite behavior
 after rollback; retained evaluation directories remain readable by authorized readers.
 See the [Ampel man page](../../docs/man/complyctl-provider-ampel.md) for path and
-evidence-field reference details.
+evidence-field reference details and the [shared evidence workflow](../../README.md#preserve-and-verify-scan-evidence)
+for workspace discovery, URI decoding and log/file transfer guidance.
 
 ## Installation
 

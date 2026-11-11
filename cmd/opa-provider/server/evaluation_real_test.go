@@ -46,6 +46,7 @@ func TestScan_RealConftestRequiresEvaluatedInput(t *testing.T) {
 					"package main\nfoo := true\n"), 0600))
 			}
 			cfg := config.NewWorkspaceConfig(workspace)
+			require.NoError(t, os.MkdirAll(workspace, 0750))
 			require.NoError(t, cfg.EnsureDirectories())
 			require.NoError(t, generate.WriteScanConfig(cfg.GeneratedDirPath(), []string{"main"},
 				map[string]string{"main": "test-req"}, policy))
