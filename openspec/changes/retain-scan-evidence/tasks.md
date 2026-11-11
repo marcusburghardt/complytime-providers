@@ -434,6 +434,89 @@ write/close failure coverage rather than deleting the error-path protection.
   Documentation impact: verification bookkeeping and upstream links only; no
   README, CHANGELOG or AGENTS feature/structure change is needed.
 
+### Unprivileged readiness follow-up (2026-11-11)
+
+- Added `retention_config_e2e_test.go`, using unchanged complyctl v1.2.0
+  (`f10c1426f3674bbcb967a8aad8ca529b32e21212`), real conftest 0.68.2 / OPA 1.15.2,
+  rebuilt OPA provider and bubblewrap network isolation. Seven new scenarios pass:
+  workspace configuration discovery, relative explicit configuration, environment
+  ignore precedence, ambiguous discovered/explicit configuration, missing relative
+  configuration and malformed ignore. Rejection cases also exercise recovery using
+  the documented explicit effective-ignore remedy in the same fixture.
+- Conflicting invalid input/configuration fixtures in invocation A prove actual
+  execution selects workspace B. Tests inspect the exact evaluated filenames and
+  findings in retained conftest bytes, then verify serialized log coordinates,
+  SHA256, IDs, escaped absolute URLs, timestamps, metadata and private modes/owners.
+  No generated index, retained results or scan logs appear beneath A. Rejected
+  scans allocate no evaluations and publish no evidence or mapping references.
+  The unchanged host does serialize operational-error logs; an initial new test
+  incorrectly expected no log at all. Corrected that new assertion to inspect the
+  error log's empty evidence/references, without changing any existing assertion
+  or production behavior. Initial/final logs are
+  `/tmp/opencode/retain-evidence-config-cli.log` and
+  `/tmp/opencode/retain-evidence-config-cli-final.log`.
+- The entire offline CLI suite passes with `-race -count=1`, explicit binary
+  prerequisites and opt-in Gemara CUE validation, including the new cases and
+  retained-evidence default/environment/flag scenarios. No offline test skips.
+  Log: `/tmp/opencode/retain-evidence-readiness-offline-cli.log`. No sibling
+  checkout/binary changes or fixture changes for its independently moved branch
+  were needed; these results apply to the isolated unchanged released host.
+- The pinned pinact-action v3.0.0 uses pinact v4.0.0 according to its pinned
+  `aqua/imports/pinact.yaml`. Installed that version only under
+  `/tmp/opencode/retain-evidence-pinact-v4/`. Its `run --check --verify
+  --verify-min-age` and `run --check --update` both exit 0 without modifications;
+  a debug run confirms workflow files were processed. Token environment variables
+  were unset. Logs are `/tmp/opencode/retain-evidence-pinact-v4-{verify,freshness,debug}.log`.
+  This closes the earlier unsupported-flag prerequisite, without adding a minimum
+  age policy: this repository has no pinact config specifying a nonzero age floor.
+- With user authorization to report confirmed upstream incompatibilities, filed
+  [complyctl #970](https://github.com/complytime/complyctl/issues/970) for the
+  current/released integration harness's legacy Ampel fixed-path assertions.
+  The report distinguishes source-confirmed incompatibility with the pending
+  retention change from an unperformed credentialed run. No consumer source edits
+  or fixed-path provider aliases were introduced.
+- `make build`, `make test`, the full `go test -race -count=1 ./...` suite with
+  conftest available, `make lint`, pinned-config Go lint, goimports, `make man`,
+  strict OpenSpec validation and whitespace checks pass after these test changes.
+  Pinned-config lint was initially started concurrently with `make lint` and hit
+  the tool's process lock; its subsequent standalone run passes with zero issues.
+  Logs use `/tmp/opencode/retain-evidence-readiness-*`.
+- Refreshed pinned MegaLinter v10.1.0 in a new isolated clone at `c7364e4` plus
+  the new test file, with unchanged missing-config fallbacks from pinned org-infra.
+  Exit 0: Go lint and betterleaks pass, while the same 115 non-blocking Markdown
+  findings and removed/ignored `REPOSITORY_KICS` warning remain. This is not a
+  zero-issue lint result, and the snapshot precedes this verification-bookkeeping
+  addition. An initial container run could not access the shared clone's alternate
+  object path; repacked only that agent-created clone to make it self-contained
+  before the successful run. Final log:
+  `/tmp/opencode/retain-evidence-readiness-megalinter-final.log`.
+- Installed-conftest isolation checks pass again. The standalone all-provider
+  consumer harness also passes using its separate release modfile and unchanged
+  v1.2.0 consumer: 42 Gemara JSON/YAML schema validations and 21 OSCAL conversions.
+  No provider/consumer dependency files or original sibling sources were changed.
+  Logs: `/tmp/opencode/retain-evidence-readiness-real-conftest.log` and
+  `/tmp/opencode/retain-evidence-readiness-consumer.log`.
+- After final test readability edits, repeated build, unit/race, both Go lint
+  configurations, man generation, strict OpenSpec, whitespace and goimports checks,
+  then the entire offline CLI/schema suite: all exit 0. Final logs use
+  `/tmp/opencode/retain-evidence-readiness-final-*`. A second MegaLinter refresh
+  includes the final test source and verification notes; it exits 0 with the same
+  115 non-blocking Markdown findings and ignored KICS warning, recorded in
+  `/tmp/opencode/retain-evidence-readiness-megalinter-current.log`.
+  All three released-baseline shell suites, shellcheck and cross-repo workflow
+  yamllint also pass again. No full CI pass or council approval is claimed.
+- Council preparation found a separate execution prerequisite: the prescribed
+  command requires `capture_review_diff`, `plan_review_dispatch` and
+  `dispatch_review_runs`, but those tools are not exposed in this session's tool
+  catalog. No council or child review was started; do not substitute manually
+  selected reviewers or claim an approval. Existing Gaze comparison, credentialed
+  integration and actual host-root verification blockers remain. Tasks 5.3, 5.4
+  and 5.8 stay incomplete; no gates, settings, credentials, PR or push were changed.
+- Documentation impact: regression verification only, with no new production
+  package, build target, public behavior or prerequisite. Existing AGENTS offline
+  test command already selects these tests; README and CHANGELOG descriptions
+  remain accurate. No structural documentation change is needed.
+
 ### Remaining follow-up
 
 - Archive this change after implementation, verification, and review. Reconcile the
