@@ -23,6 +23,9 @@
 
 ### Fixed
 
+- **internal/evidence**: Keep validated artifact inodes live until evaluation
+  cleanup so unlink/recreation cannot evade replacement detection through inode
+  reuse. Repeated validation and read failures release redundant identity handles.
 - **opa-provider**: Separate command stdout from diagnostic stderr so conftest warnings
   do not corrupt JSON parsing. Preserve captured environments, composed ignore rules,
   and stderr-based empty-directory rejection without misclassifying other tool failures.

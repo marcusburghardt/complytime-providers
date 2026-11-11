@@ -281,8 +281,16 @@ func TestEvaluation_RejectsChangesAfterValidation(t *testing.T) {
 			case "remove":
 				require.NoError(t, os.Remove(evaluation.Path(ConftestFile)))
 			case "substitute":
-				require.NoError(t, os.Remove(evaluation.Path(ConftestFile)))
-				require.NoError(t, os.WriteFile(evaluation.Path(ConftestFile), []byte("original"), FileMode))
+				// Allocate the replacement while the original inode still exists;
+				// unlink/recreate alone can recycle an inode on some filesystems.
+				replacement := filepath.Join(filepath.Dir(evaluation.Directory), "replacement")
+				require.NoError(t, os.WriteFile(replacement, []byte("original"), FileMode))
+				originalInfo, err := os.Stat(evaluation.Path(ConftestFile))
+				require.NoError(t, err)
+				replacementInfo, err := os.Stat(replacement)
+				require.NoError(t, err)
+				require.False(t, os.SameFile(originalInfo, replacementInfo))
+				require.NoError(t, os.Rename(replacement, evaluation.Path(ConftestFile)))
 			case "parent-symlink":
 				parent := filepath.Dir(evaluation.Directory)
 				require.NoError(t, os.Rename(parent, parent+"-moved"))

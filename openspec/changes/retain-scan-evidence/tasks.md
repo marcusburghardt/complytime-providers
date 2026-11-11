@@ -517,6 +517,62 @@ write/close failure coverage rather than deleting the error-path protection.
   test command already selects these tests; README and CHANGELOG descriptions
   remain accurate. No structural documentation change is needed.
 
+### CI artifact-identity remediation (2026-11-11)
+
+- PR #238 at `2543d20` failed both local-CI and released-v1.2.0 provider tests in
+  `TestEvaluation_RejectsChangesAfterValidation/substitute`. The fixture unlinked
+  and recreated identical bytes; the filesystem could recycle the original inode
+  because `Read` had closed its only artifact handle. Device/inode plus byte
+  comparison therefore did not reliably detect replacement.
+- Added deterministic lifecycle regressions before changing production code;
+  `/tmp/opencode/retain-evidence-identity-regression-before.log` records the expected
+  failures. The tests observe real file handles through the existing trusted Stat
+  boundary, without a new `/proc` or privileged-test prerequisite.
+- `Read` now opens and checks a second constrained identity handle while its
+  snapshot descriptor is still live. It preserves the existing checked read-close
+  path, keeps one identity handle per validated artifact until evaluation cleanup,
+  and releases redundant handles on repeated or rejected reads. `Close` attempts
+  every artifact and directory close and joins failures without deleting output.
+  This implements the existing same-artifact guarantee rather than changing it.
+- The original substitution fixture now allocates identical replacement bytes
+  while the original still exists, verifies distinct identities and atomically
+  renames the replacement. New tests also retain unlink/recreate coverage, prove
+  identity handles survive finalization, and cover read/open/stat/replacement/close
+  failures, preservation of the original pin after rejection, bounded handles on
+  repeated reads and releasing every handle despite a close failure. Focused
+  regressions pass 100 repetitions with the race detector.
+- Full build/unit/race, local and pinned-config Go lint, goimports, man generation,
+  strict OpenSpec, whitespace, real-conftest isolation and offline CLI/schema tests
+  pass. The isolated provider checkout using unchanged complyctl v1.2.0 also passes
+  build/tests and the 100-repeat identity regressions with `GOFLAGS=-mod=mod`.
+  The all-provider consumer harness passes again. Logs use
+  `/tmp/opencode/retain-evidence-identity-*`.
+- Focused workflow-selected Gaze v1.9.0 passes without new threshold violations:
+  Read complexity 6 / CRAP 6.027 / GazeCRAP 7.333; Close 3 / 3 / 12;
+  snapshot complexity 8 / CRAP 8.048; pinIdentity complexity 4 / CRAP 4.
+  The historical absolute/relative path mismatch still prevents a genuine
+  baseline-regression comparison. No settings, baseline or thresholds changed.
+- Pinned MegaLinter v10.1.0 passes in a fresh isolated clone with unchanged
+  fallback configs: Go lint/betterleaks pass, with the existing 115 non-blocking
+  Markdown findings and ignored KICS warning. An initial rerun in the earlier
+  lint clone found incomplete Go packages inside its generated
+  `megalinter-reports/updated_sources/` tree, not in repository source. Preserved
+  those diagnostics and reran in a fresh self-contained clone rather than deleting
+  user files or changing exclusions. Final log:
+  `/tmp/opencode/retain-evidence-identity-megalinter-final.log`.
+- Live main-consumer integration completed real credentialed Ampel and OPA scans
+  and reported 18 assertions passed, with only the two obsolete Ampel globs failing.
+  Added that CI evidence and the frozen-release-harness follow-up to
+  [complyctl #970](https://github.com/complytime/complyctl/issues/970#issuecomment-6792982703).
+  The released-host integration itself was skipped after its provider unit failure;
+  its legacy harness assertions still need the separate upstream spec/review.
+  No consumer source, host revision, fixed-path aliases or CI gate was changed.
+- CHANGELOG records the identity-lifetime bug fix and GoDoc describes handle
+  lifetime/cleanup. Existing README/man behavior remains accurate; no new package,
+  build target, dependency or AGENTS structural update is needed. User-owned
+  uncommitted AGENTS governance edits remain untouched. Manual root acceptance and
+  council execution remain unperformed; tasks 5.3/5.4/5.8 are not marked complete.
+
 ### Remaining follow-up
 
 - Archive this change after implementation, verification, and review. Reconcile the

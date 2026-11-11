@@ -59,7 +59,7 @@ type StorageOptions struct {
 }
 
 // Evaluation owns a fresh output directory and constrained artifact access. Close
-// releases its directory handle, not its files. CollectionTime is collection start,
+// releases its directory and identity handles, not its files. CollectionTime is collection start,
 // captured before tool execution; Token supplies 128 bits of random instance identity.
 // This provides local preservation, not immutable or power-loss-durable storage.
 type Evaluation struct {
@@ -82,6 +82,7 @@ type Artifact struct {
 	Coordinate string
 	Path       string
 	info       os.FileInfo
+	identity   *os.File
 }
 
 // Label makes a bounded display component, independently of logical-ID encoding.
@@ -273,8 +274,18 @@ func directoryDescriptor(file *os.File) (int, error) {
 	return int(descriptor), nil
 }
 
-// Close releases allocation handles without deleting any retained or partial output.
-func (evaluation *Evaluation) Close() error { return evaluation.dir.Close() }
+// Close releases allocation and artifact-identity handles without deleting output.
+// Every handle is closed even when an earlier close fails; all errors are returned.
+func (evaluation *Evaluation) Close() error {
+	var closeErr error
+	for _, artifact := range evaluation.validated {
+		if artifact.identity != nil {
+			closeErr = errors.Join(closeErr, artifact.identity.Close())
+			artifact.identity = nil
+		}
+	}
+	return errors.Join(closeErr, evaluation.dir.Close())
+}
 
 // Path returns an absolute output locator for a single artifact component. It is
 // not a safe read API: use Read to validate and hash tool output through a handle.
@@ -313,9 +324,34 @@ func (evaluation *Evaluation) Write(name string, data []byte) error {
 }
 
 // Read rejects symlinks and non-regular outputs, then snapshots and hashes the same
-// descriptor's bytes. Parsing must use the returned Data. Finalize detects subsequent
-// substitutions/changes before publication. Missing/unreadable outputs are errors.
+// descriptor's bytes. Parsing must use the returned Data. An identity handle pins
+// the validated inode until Close so it cannot be recycled after unlinking. Finalize
+// detects subsequent substitutions/changes. Missing/unreadable outputs are errors.
 func (evaluation *Evaluation) Read(name string) (*Artifact, error) {
+	artifact, err := evaluation.snapshot(name)
+	if err != nil {
+		return nil, err
+	}
+	if previous := evaluation.validated[name]; previous != nil {
+		if !sameArtifact(previous.info, artifact.info) || !bytes.Equal(previous.Data, artifact.Data) {
+			return nil, errors.Join(fmt.Errorf("artifact %q changed after validation", name),
+				artifact.identity.Close())
+		}
+		if err := artifact.identity.Close(); err != nil {
+			return nil, fmt.Errorf("closing repeated artifact identity %q: %w", name, err)
+		}
+		artifact.identity = previous.identity
+	}
+	evaluation.validated[name] = artifact
+	return artifact, nil
+}
+
+func (evaluation *Evaluation) snapshot(name string) (*Artifact, error) {
+	path := evaluation.Path(name)
+	coordinate, err := filepath.Rel(evaluation.workspace, path)
+	if err != nil {
+		return nil, fmt.Errorf("artifact coordinate: %w", err)
+	}
 	file, err := openAt(evaluation.dir, name, syscall.O_RDONLY, 0)
 	if err != nil {
 		return nil, fmt.Errorf("opening artifact %q: %w", name, err)
@@ -328,22 +364,37 @@ func (evaluation *Evaluation) Read(name string) (*Artifact, error) {
 		return nil, errors.Join(fmt.Errorf("artifact %q is not regular", name), file.Close())
 	}
 	data, readErr := evaluation.operations.Read(file)
-	if err := errors.Join(readErr, evaluation.operations.Close(file)); err != nil {
+	var identity *os.File
+	var identityErr error
+	if readErr == nil {
+		identity, identityErr = evaluation.pinIdentity(name, info)
+	}
+	if err := errors.Join(readErr, identityErr, evaluation.operations.Close(file)); err != nil {
+		if identity != nil {
+			err = errors.Join(err, identity.Close())
+		}
 		return nil, fmt.Errorf("reading artifact %q: %w", name, err)
 	}
-	path := evaluation.Path(name)
-	coordinate, err := filepath.Rel(evaluation.workspace, path)
+	return &Artifact{Data: data, Digest: fmt.Sprintf("sha256:%x", sha256.Sum256(data)),
+		Path: path, Coordinate: coordinate, info: info, identity: identity}, nil
+}
+
+func (evaluation *Evaluation) pinIdentity(name string, expected os.FileInfo) (*os.File, error) {
+	// The snapshot descriptor is still open, so a replacement cannot reuse its
+	// inode while this second constrained handle is opened and checked.
+	identity, err := openAt(evaluation.dir, name, syscall.O_RDONLY, 0)
 	if err != nil {
-		return nil, fmt.Errorf("artifact coordinate: %w", err)
+		return nil, fmt.Errorf("pinning artifact identity %q: %w", name, err)
 	}
-	artifact := &Artifact{Data: data, Digest: fmt.Sprintf("sha256:%x", sha256.Sum256(data)),
-		Path: path, Coordinate: coordinate, info: info}
-	if previous := evaluation.validated[name]; previous != nil &&
-		(!sameArtifact(previous.info, info) || !bytes.Equal(previous.Data, data)) {
-		return nil, fmt.Errorf("artifact %q changed after validation", name)
+	info, err := evaluation.operations.Stat(identity)
+	if err != nil {
+		return nil, errors.Join(err, identity.Close())
 	}
-	evaluation.validated[name] = artifact
-	return artifact, nil
+	if !sameArtifact(expected, info) {
+		return nil, errors.Join(fmt.Errorf("artifact %q replaced during validation", name),
+			identity.Close())
+	}
+	return identity, nil
 }
 
 func (evaluation *Evaluation) verifyFile(file *os.File, mode os.FileMode) error {
