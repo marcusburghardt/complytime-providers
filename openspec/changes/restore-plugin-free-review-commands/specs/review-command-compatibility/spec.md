@@ -81,11 +81,12 @@ approval SHALL NOT authorize a different revision or changed working tree.
 
 ### Requirement: Missing or failed reviews never count as approval
 
-Commands SHALL collect actual reviewer results before consolidation and
-preserve the current verdict rules. A failed, cancelled, timed-out, missing,
-or malformed required reviewer result SHALL NOT count as approval. Unresolved
-blocking findings SHALL prevent approval; review exhaustion SHALL require the
-existing human decision rather than silently extending the loop.
+Commands SHALL collect actual results and preserve current verdict rules.
+Failed, cancelled, timed-out, missing, or malformed results SHALL be reported
+as informational and non-voting, not automatic blockers when another structured
+assessment succeeds. Zero successful assessments or unresolved blocking findings
+SHALL prevent approval. Review exhaustion SHALL require the existing human
+decision rather than silently extending the loop.
 
 #### Scenario: Reviewers complete successfully
 
@@ -93,10 +94,26 @@ existing human decision rather than silently extending the loop.
 - **THEN** the command reports the actual reviewers and their consolidated verdict
 - **AND** it does not invent model provenance or usage data
 
-#### Scenario: Reviewer fails or requests changes
+#### Scenario: Reviewer fails while other reviewers approve
 
-- **WHEN** a required reviewer fails to complete or returns a blocking finding
-- **THEN** the command identifies that reviewer and withholds approval
+- **WHEN** a reviewer fails to complete or returns a malformed result, but at
+  least one other reviewer returns a successful structured approving assessment
+- **THEN** the command reports the failure as informational and non-voting
+- **AND** the failure alone does not prevent approval under the current verdict rules
+- **AND** any retry remains within existing limits
+
+#### Scenario: No reviewer succeeds
+
+- **WHEN** no reviewer returns a successful structured assessment
+- **THEN** the command reports `UNAVAILABLE` for availability-only provider,
+  model, or runtime causes, or `INCONCLUSIVE` for policy, plan, budget, limit,
+  persistence, calculation, or mixed causes
+- **AND** it withholds approval and blocks automated progression
+
+#### Scenario: Successful reviewer requests changes
+
+- **WHEN** a successful structured assessment returns an unresolved blocking finding
+- **THEN** the command identifies that reviewer and reports `REQUEST CHANGES`
 - **AND** any retry or fix loop remains within existing limits
 
 ### Requirement: Existing quality and human authorization gates remain intact

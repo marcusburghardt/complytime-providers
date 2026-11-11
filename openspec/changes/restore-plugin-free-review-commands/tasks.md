@@ -25,8 +25,9 @@ this proposal does not complete them.
   have no required plugin-tool calls in their dependency closure.
 - [ ] 2.2 Add focused regression checks for required review participation, content
   persona exclusion, policy/limit incompatibility, failed or malformed reviewer
-  results, and stale scope; verify positive fixtures pass and negative fixtures
-  cannot yield approval without adding dependencies or changing CI gates.
+  results, and stale scope; verify partial-success fixtures preserve current
+  verdict rules and no-success, blocking-finding, policy-failure, and stale-scope
+  fixtures cannot yield approval without adding dependencies or changing CI gates.
 - [ ] 2.3 Validate native phase tracking with optional todos absent and an
   interrupted/compacted session; verify a matching record recovers phases, stale
   results are invalidated, and ambiguous action receipts do not trigger repeats.
