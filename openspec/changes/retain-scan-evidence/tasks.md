@@ -279,6 +279,60 @@ write/close failure coverage rather than deleting the error-path protection.
   or changed to substitute for the pinned workflow. Released-baseline build/test and
   credentialed integration jobs remain unverified. 5.3 stays incomplete.
 
+### Additional verification checkpoint (2026-11-11)
+
+- 5.3 remains blocked: Gaze v2.3.0 completed its JSON report without analysis
+  errors, but its unchanged committed-baseline comparison exited 1 with
+  `passed: false` and four `new_violation` entries. Changed-package coverage tests
+  passed with conftest available. Ampel `(*ProviderServer).Scan` reports CRAP
+  33.2659 / GazeCRAP 33; shared `Allocate` reports 24.2188 / 89.125, and shared
+  `EnsureDirectories` reports 10.8 / 110. These require implementation/test-quality
+  investigation, not a threshold increase. OpenSCAP `RuleResultMessage` reports
+  CRAP 72, identical to its committed baseline entry; its body is unchanged.
+- Baseline comparability also needs investigation: committed entries use absolute
+  source paths while current Gaze emits repository-relative paths. The comparison
+  classifies 276 functions as new and 191 as removed, with no unchanged entries.
+  No baseline, Gaze settings, thresholds or workflow gates were modified. Raw results
+  are `/tmp/opencode/retain-evidence-ci-crap.json` and
+  `/tmp/opencode/retain-evidence-ci-gaze-report.json`; the coverage profile is
+  `/tmp/opencode/retain-evidence-ci-coverage.out`.
+- MegaLinter v10.1.0 ran in a rootless Podman container against an isolated clone of
+  implementation commit `366b7db`, in changed-file mode, using the repository's
+  existing configuration and unmodified missing-config fallbacks from pinned
+  org-infra. Image revision matches CI's
+  `9949bad031045f366be2467e00e8371a7328a2e2`; image digest is
+  `sha256:b09486c423063200d6f203b63121e0967719eee03c234844f6f1dd658f00a31b`.
+  It exits 0: Go lint and betterleaks pass, while markdownlint reports 115
+  non-blocking errors across 11 files. This is not a zero-issue lint result.
+  It also reports that configured `REPOSITORY_KICS` was removed and is ignored;
+  no scanner replacement or configuration change was made. Details are in
+  `/tmp/opencode/retain-evidence-megalinter.log` and the isolated clone's reports.
+- Installed pinact v3.10.1 completed `run --check --verify` and
+  `run --check --update` with exit 0 and no output or working-tree edits. Its CLI
+  lacks the pinned action's `--verify-min-age` option, so these checks do not
+  establish full pinact-action parity. PR-title validation still needs PR context.
+- Released-baseline resolution selects complyctl v1.2.0 at
+  `f10c1426f3674bbcb967a8aad8ca529b32e21212`; a separate public checkout's exact
+  commit and prerequisites were verified. The unchanged release builds as
+  `v1.2.0+clean`. In an isolated provider worktree, the workflow's local dependency
+  replacement, `go mod tidy`, `GOFLAGS=-mod=mod make build` and
+  `GOFLAGS=-mod=mod make test` pass. The original provider dependencies and original
+  complyctl checkout remain untouched.
+- All offline CLI regressions also pass under `-race -count=1` against the released
+  host and providers built against it, including three retained-evidence scans per
+  workspace-selection case and opt-in Gemara schema validation, without skips.
+  Logs are `/tmp/opencode/retain-evidence-released-provider-test.log` and
+  `/tmp/opencode/retain-evidence-released-offline-cli.log`. Remote main still resolves
+  to the previously tested `ebed460cb55e79e9c4d8f1189ef3286e0e6a218e`.
+- 5.4 remains incomplete: `GITHUB_TOKEN` is unset, both unchanged consumer harnesses
+  retain fixed-path Ampel assertions, controlled host-root reading/ownership is
+  unverified, and the remaining host-level configuration/ignore scenarios are not
+  established by the offline retained-evidence test. No credentials were provisioned
+  or sudo attempted. 5.8 council remains pending; no PR, archive or remote
+  synchronization was performed. Documentation impact: verification bookkeeping
+  only; existing README, CHANGELOG and AGENTS feature/structure descriptions need
+  no change for these additional test results.
+
 ### Remaining follow-up
 
 - Archive this change after implementation, verification, and review. Reconcile the
