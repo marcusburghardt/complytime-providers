@@ -28,6 +28,31 @@ supported arguments SHALL remain available.
 - **THEN** the command reports the missing capability and stops without approval
 - **AND** it does not substitute a parent-only review
 
+### Requirement: Explicit V1 runtime context
+
+The supported V1 path SHALL require authenticated `serve`/`attach` execution with
+verified server and exact current caller-session context. It SHALL preserve
+command arguments, global settings, and review policy. Default in-process V1
+execution SHALL NOT be advertised as supporting the external HTTP supervisor.
+
+#### Scenario: Explicit V1 launch context is valid
+
+- **GIVEN** a contributor attached to a live authenticated V1 server
+- **AND** explicit invocation context available to its server-side tools
+- **WHEN** the command verifies the endpoint, project, current caller turn/tool
+  invocation, and frozen scope against that runtime
+- **THEN** it resolves the inherited model and variant from the actual caller
+- **AND** it executes bounded reviewers in that same runtime under unchanged policy
+
+#### Scenario: V1 launch context is missing or mismatched
+
+- **WHEN** invocation context is missing, ambiguous, unauthenticated, stale, or
+  identifies another server, project, or caller, including another active session
+- **THEN** the command reports the missing or invalid prerequisite and withholds approval
+- **AND** it starts no child reviewer and performs no gated mutations
+- **AND** it does not guess the latest session, inspect private databases, or
+  substitute a newly started server for the actual caller
+
 ### Requirement: Council review remains the review authority
 
 PR review SHALL use the council rather than a single general reviewer.

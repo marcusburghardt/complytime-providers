@@ -119,21 +119,58 @@ the existing non-voting failure and no-success verdict rules; do not fabricate
 model provenance, usage, or plugin-validated artifacts. Only integrate a proven
 supervisor into the shared native path; unsupported policies remain blockers.
 
+### Require explicit V1 launch context without changing review policy
+
+**Approved on 2026-11-12.** After the automatic-discovery investigation, the
+maintainer approved an explicit V1 `serve`/`attach` prerequisite with trustworthy
+server and caller-session context. The default V1.19.0 TUI/local-run transport is
+in-process; an ordinary command fixture confirmed no TCP listener or shell
+caller-ID handoff. Do not claim the default launch supports the HTTP supervisor.
+
+The supported V1 path must attach the contributor to the same live authenticated
+server used by the reviewer lifecycle. Supply its endpoint and exact current
+caller session as invocation context, not new command arguments or global
+configuration. Context must reach the server-side tool process: setting variables
+only in an attach client is not evidence that its tools receive them. Keep any
+file-based context private under the existing ignored workflow directory; never
+store credentials or reusable consent in it.
+
+Before dispatch, validate the supplied context against the live runtime, project
+directory, active caller turn/tool invocation, and frozen review scope. Resolve
+the inherited model/variant from that caller, then apply existing policy overrides.
+Missing, ambiguous, wrong-server, wrong-session, unauthenticated, or stale context
+must stop automated progression without child dispatch or approval. Reject a
+binding to another active session, not merely a session that no longer exists.
+
+Do not guess the newest session, scan unrelated processes, read private databases,
+or start a replacement server and call it the existing caller. Preserve native
+tool permission checks, cancellation propagation, terminal verification, limits,
+and human confirmation. V2 continues using its own native discovery/authentication
+contract; it must also verify that context identifies the actual caller.
+
+Validate the documented V1 setup end to end without fixture-only hidden context,
+including wrong active caller, wrong endpoint, stale context, missing credentials,
+deadline expiry, and parent cancellation. Existing standalone lifecycle evidence
+is not acceptance of this launch integration. Commit and push these revised
+planning artifacts before implementing the prerequisite; approval does not itself
+authorize committing implementation or unrelated documentation changes.
+
 ### Minimal-change safeguard mapping
 
 This mapping records source inspection on 2026-11-12, not runtime equivalence.
 Keep policy files and plugin implementations unchanged. Implement only native
 steps actually needed by the three selected commands, sharing repeated Markdown
-instructions only when necessary. Task 1.2 remains incomplete while the deadline
-capability is unresolved; no command mechanics have changed.
+instructions only when necessary. The isolated lifecycle and native-tool boundary
+checks now pass. Task 1.2 remains incomplete until the approved explicit V1 launch
+context is integrated and validated; no command mechanics have changed.
 
 | Safeguard and current source | Smallest proposed native equivalent | Status |
 | --- | --- | --- |
 | Eligibility: `.uf/reviewer-capabilities.yaml`; `relevance` in the review-dispatch plugin | Read the existing manifest, exclude content personas, retain Adversary/Guard and scope-based selection; do not infer eligibility from filenames alone | Mapping identified; selection checks pending |
 | Default/full selection: `baseRuns` and `fullPanelRuns` in the review-dispatch plugin | Preserve configured profile selection; `--full` selects every discovered review persona once at the standard profile, without truncation | Mapping identified; fixtures pending |
-| Models/variants: `.uf/review-matrix.yaml` and optional ignored override | Read authoritative configuration; preserve explicit runs and allowed overrides; report unsupported model/variant selection rather than substitute | Canonical profiles are empty and no override is present; runtime inheritance unverified |
+| Models/variants: `.uf/review-matrix.yaml` and optional ignored override | Read authoritative configuration; preserve explicit runs and allowed overrides; report unsupported model/variant selection rather than substitute | Caller-to-child resolution passes with fixture-supplied context; trusted launch-context integration remains pending |
 | Persona/run/concurrency limits: matrix `limits` | Validate the complete invocation list before dispatch; use batches no larger than the configured maximum; retain skipped and failed outcomes | Mapping identified; boundary checks pending |
-| Reviewer deadline: matrix `per_run_timeout_seconds`; `agent-executor.ts` | Enforce the complete child-run deadline and confirm cancellation, without treating client termination or a prompt as enforcement | Blocked: native delegation has no deadline parameter; no equivalent execution path verified |
+| Reviewer deadline: matrix `per_run_timeout_seconds`; `agent-executor.ts` | Enforce the complete child-run deadline and confirm cancellation, without treating client termination or a prompt as enforcement | Isolated API lifecycle and actual foreground native-tool cancellation pass on V1.19.0 and V2.2.7; command integration remains pending |
 | Reported-cost budget: matrix `max_reported_cost_usd`; review-dispatch batch loop | Sum runtime-reported costs after each batch and stop later batches when the budget is exceeded; retain unavailable costs as unknown, never invented | Runtime cost access unverified; existing executor sums only non-null reported costs |
 | Immutable scope: council input resolution and PR metadata | Capture exact Git base/head objects plus included working-tree content once; share that scope and recheck before approval or mutation | Mapping identified; stale-scope fixtures pending |
 | Reviewer results/verdicts: each command's consolidation protocol and `severity.md` | Collect structured native child returns; preserve deduplication, blocking findings, partial-success/no-success rules, and feedback's strictest successful recommendation | Mapping identified; malformed-result fixtures pending |

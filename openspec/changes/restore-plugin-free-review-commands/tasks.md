@@ -12,24 +12,37 @@ this proposal does not complete them.
 - [ ] 1.2 Map current eligibility, model policy, limits, verdicts, immutable scope,
   progress recovery, pre-flight, and mutation gates to equivalent native steps;
   verify no governance change is needed and report any conflict before editing.
-- [ ] 1.3 Document the baseline, safeguard mapping, supported command subset,
+  Mapping and native-tool cancellation evidence: `docs/review-command-compatibility.md`.
+  Explicit V1 serve/attach context approved on 2026-11-12 after default-launch
+  investigation found no HTTP listener or shell caller-ID handoff. Verify the
+  supplied endpoint and exact active caller before dispatch; missing, stale,
+  unauthenticated, wrong-endpoint, and wrong-active-session cases must fail closed.
+  Still pending: documented launch integration, not fixture-only context injection.
+- [x] 1.3 Document the baseline, safeguard mapping, supported command subset,
   overwrite warning, and isolated V1/V2 verification procedure in
   `docs/AI_TOOLING.md`; verify links and executable paths without replacing the
   contributor's installed runtime. Propose generic guidance in the canonical
   `org-infra/docs/AI_TOOLING.md` as a separate docs-only follow-up, and relocate
   durable repository-specific evidence out of the provisioned guide.
+  Evidence: `docs/review-command-compatibility.md`; generic guidance matches the
+  separate uncommitted org-infra draft. No command compatibility is claimed.
 
 ## 2. Native council execution
 
-- [ ] 2.0 Prototype the smallest native CLI/API reviewer deadline path under the
+- [x] 2.0 Prototype the smallest native CLI/API reviewer deadline path under the
   renewed maintainer approval, without new
   runtime packages or policy changes; verify actual reviewer completion, deadline
   expiry, parent cancellation, failed cancellation, and recovery on exact isolated
   V1/V2 runtimes before integrating it. Stop on unconfirmed child cancellation.
+  Evidence: `docs/review-command-compatibility.md`. Isolated lifecycle checks pass;
+  command integration and full command runtime checks remain incomplete.
 - [ ] 2.1 Adapt `/uf.review-council` and add a shared Markdown skill only where
   needed for native delegation and persistent phase recovery; verify code/spec
   modes, current default selection, full-panel selection, and native tool discovery
   have no required plugin-tool calls in their dependency closure.
+  Integrate the approved explicit V1 launch prerequisite without new command
+  arguments, packages, plugins, or global settings; verify context reaches the
+  server-side tool process and binds the actual current invocation.
 - [ ] 2.2 Add focused regression checks for required review participation, content
   persona exclusion, policy/limit incompatibility, failed or malformed reviewer
   results, and stale scope; verify partial-success fixtures preserve current
@@ -60,6 +73,9 @@ this proposal does not complete them.
   OpenCode V1 version with UF plugins unavailable; verify successful reviews,
   failed/cancelled reviewers, stale approvals, recovery, and declined mutation
   gates, stopping normal feedback execution before external writes.
+  Use the documented approved serve/attach setup without hidden fixture-only
+  context; test valid binding, missing credentials/context, wrong endpoint,
+  another active caller session, and stale context before claiming V1 support.
 - [ ] 4.2 Repeat the same runtime checks under an exact recorded OpenCode V2
   version; deliver a per-command evidence matrix with results and redacted
   observations, treating an unavailable runtime as unverified rather than passed.

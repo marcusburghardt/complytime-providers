@@ -20,6 +20,9 @@ or weakening the repository's review requirements.
 - Replace plugin-specific mechanics within these commands with documented,
   cross-version native-tool instructions, including safe progress recovery,
   immutable review scope, result collection, and human confirmation.
+- Require explicit authenticated `serve`/`attach` context for the supported V1
+  path, as approved on 2026-11-12. Bind the exact current caller session without
+  changing command arguments, global settings, or existing review safeguards.
 - Document the v0.19.0 baseline, local adaptations, verified runtime versions,
   and protection against accidental replacement during later UF scaffolding.
 
