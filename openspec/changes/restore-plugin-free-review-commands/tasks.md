@@ -6,7 +6,7 @@ this proposal does not complete them.
 
 ## 1. Baseline and safeguard reconciliation
 
-- [ ] 1.1 Resolve UF v0.19.0 to its upstream commit and inventory the selected
+- [x] 1.1 Resolve UF v0.19.0 to its upstream commit and inventory the selected
   commands' direct, shared-skill, and resume dependencies; verify the delivered
   inventory distinguishes native prerequisites from every required plugin tool.
 - [ ] 1.2 Map current eligibility, model policy, limits, verdicts, immutable scope,
@@ -15,10 +15,17 @@ this proposal does not complete them.
 - [ ] 1.3 Document the baseline, safeguard mapping, supported command subset,
   overwrite warning, and isolated V1/V2 verification procedure in
   `docs/AI_TOOLING.md`; verify links and executable paths without replacing the
-  contributor's installed runtime.
+  contributor's installed runtime. Propose generic guidance in the canonical
+  `org-infra/docs/AI_TOOLING.md` as a separate docs-only follow-up, and relocate
+  durable repository-specific evidence out of the provisioned guide.
 
 ## 2. Native council execution
 
+- [ ] 2.0 Prototype the smallest native CLI/API reviewer deadline path under the
+  renewed maintainer approval, without new
+  runtime packages or policy changes; verify actual reviewer completion, deadline
+  expiry, parent cancellation, failed cancellation, and recovery on exact isolated
+  V1/V2 runtimes before integrating it. Stop on unconfirmed child cancellation.
 - [ ] 2.1 Adapt `/uf.review-council` and add a shared Markdown skill only where
   needed for native delegation and persistent phase recovery; verify code/spec
   modes, current default selection, full-panel selection, and native tool discovery

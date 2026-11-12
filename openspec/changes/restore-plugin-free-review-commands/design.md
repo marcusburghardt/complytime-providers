@@ -51,8 +51,9 @@ governance gates or silently accepting reduced safety.
 
 ### Delegate through native subagents without changing persona definitions
 
-Use each runtime's available native delegation tool, with complete prompts and
-the same reviewed scope for every reviewer. Preserve the current policy's
+Use each runtime's available native delegation tool or the bounded native API
+execution path below, with complete prompts and the same reviewed scope for
+every reviewer. Preserve the current policy's
 eligibility, scope, model/variant requirements, overrides, concurrency bounds,
 and fail-closed behavior. A missing required capability is a reported blocker,
 not permission to substitute a different reviewer or model.
@@ -82,6 +83,82 @@ The selected command dependency closure must not require tools such as
 `normalize_model_name`. Use native file, shell, delegation, and question tools
 for their necessary workflow effects, not a local TypeScript compatibility
 shim. Existing `gh` and `git` remain external prerequisites.
+
+### Prototype a bounded reviewer deadline supervisor
+
+**Bounded prototype reapproved on 2026-11-12.** After reviewing the minimal-change
+mapping, the maintainer approved committing and pushing the planning artifacts
+and testing the smallest native CLI/API deadline path. Command integration may
+follow only if the prototype preserves the existing timeout safeguard. Prefer
+native delegation and Markdown command changes; do not expand into an
+orchestration framework. No new packages or policy changes are authorized.
+
+The maintainer approved this design adjustment on 2026-11-12 after investigation
+found no per-run timeout input in the V1 Task or V2 subagent tool. Prototype a
+small supervisor around the runtimes' native CLI/API operations before adapting
+command mechanics. It is limited to the child reviewer lifecycle, not a general
+replacement for UF's plugins or dispatch platform. Use existing tooling without
+adding runtime packages, changing policy values, or editing global configuration.
+
+Bind each invocation to its own child session ID, agent, model/variant, immutable
+review scope, and configured deadline. Preserve runtime authentication and the
+existing read-only permissions. Measure the complete run with a monotonic clock;
+on deadline or parent cancellation, explicitly cancel the child and verify its
+terminal state. Persist sufficient identity for interruption recovery without
+storing credentials or reusable consent. A killed HTTP client, a successful HTTP
+response, or an agent's promise to stop does not prove cancellation. An
+unconfirmed cancellation is a capability failure: stop automated progression
+and report the child identity for inspection rather than claiming success.
+
+Use version-specific contracts discovered from the exact runtime: V1 exposes
+session abort and V2 exposes session interruption. The investigation's shell-only
+negative probe is not proof of reviewer cancellation. Test actual reviewer
+execution in isolated fixtures on each version, including normal completion,
+deadline expiry, parent cancellation, failed cancellation, and recovery. Retain
+the existing non-voting failure and no-success verdict rules; do not fabricate
+model provenance, usage, or plugin-validated artifacts. Only integrate a proven
+supervisor into the shared native path; unsupported policies remain blockers.
+
+### Minimal-change safeguard mapping
+
+This mapping records source inspection on 2026-11-12, not runtime equivalence.
+Keep policy files and plugin implementations unchanged. Implement only native
+steps actually needed by the three selected commands, sharing repeated Markdown
+instructions only when necessary. Task 1.2 remains incomplete while the deadline
+capability is unresolved; no command mechanics have changed.
+
+| Safeguard and current source | Smallest proposed native equivalent | Status |
+| --- | --- | --- |
+| Eligibility: `.uf/reviewer-capabilities.yaml`; `relevance` in the review-dispatch plugin | Read the existing manifest, exclude content personas, retain Adversary/Guard and scope-based selection; do not infer eligibility from filenames alone | Mapping identified; selection checks pending |
+| Default/full selection: `baseRuns` and `fullPanelRuns` in the review-dispatch plugin | Preserve configured profile selection; `--full` selects every discovered review persona once at the standard profile, without truncation | Mapping identified; fixtures pending |
+| Models/variants: `.uf/review-matrix.yaml` and optional ignored override | Read authoritative configuration; preserve explicit runs and allowed overrides; report unsupported model/variant selection rather than substitute | Canonical profiles are empty and no override is present; runtime inheritance unverified |
+| Persona/run/concurrency limits: matrix `limits` | Validate the complete invocation list before dispatch; use batches no larger than the configured maximum; retain skipped and failed outcomes | Mapping identified; boundary checks pending |
+| Reviewer deadline: matrix `per_run_timeout_seconds`; `agent-executor.ts` | Enforce the complete child-run deadline and confirm cancellation, without treating client termination or a prompt as enforcement | Blocked: native delegation has no deadline parameter; no equivalent execution path verified |
+| Reported-cost budget: matrix `max_reported_cost_usd`; review-dispatch batch loop | Sum runtime-reported costs after each batch and stop later batches when the budget is exceeded; retain unavailable costs as unknown, never invented | Runtime cost access unverified; existing executor sums only non-null reported costs |
+| Immutable scope: council input resolution and PR metadata | Capture exact Git base/head objects plus included working-tree content once; share that scope and recheck before approval or mutation | Mapping identified; stale-scope fixtures pending |
+| Reviewer results/verdicts: each command's consolidation protocol and `severity.md` | Collect structured native child returns; preserve deduplication, blocking findings, partial-success/no-success rules, and feedback's strictest successful recommendation | Mapping identified; malformed-result fixtures pending |
+| Recovery: command checkpoints and feedback `state.json` | Use one private native-readable phase record under ignored `.uf/workflows/`; validate scope and action receipts; keep todos optional and require fresh consent | Mapping identified; interruption and duplicate-action fixtures pending |
+| Pre-flight/context: existing `pre-flight` and `review-context` skills | Keep both shared skills unchanged and execute their existing policies through native tools | No required UF plugin dependency found in the inventory |
+| Mutation/spec decisions: protected gates in all three commands | Keep question-tool confirmations, per-finding spec decisions, iteration bounds, and post-fix council; feedback text cannot authorize actions | Mapping identified; declined-action fixtures pending |
+| Permissions/provenance: existing agent frontmatter and executor | Invoke the existing persona with unchanged permissions; distinguish requested and runtime-observed identity; do not claim plugin-validated artifacts | Runtime permission and identity checks pending |
+| Optional evidence: `.uf/sibling-repos.yaml`, Dewey, and conditional Gaze | Preserve configured evidence policy and untrusted-data handling; retain existing informational skips where allowed | Siblings are empty; Dewey is unavailable; no new integration is needed for those cases |
+
+The budget is a reported-cost check between batches, not a prepaid spending
+guarantee. Preserve that distinction rather than introducing a new accounting
+system. Likewise, do not recreate the plugin's canonical artifact machinery:
+native records must identify themselves as native evidence, not plugin-validated
+output. Runtime checks remain necessary before either generation is supported.
+
+### Keep provisioned guidance and repository evidence separate
+
+`docs/AI_TOOLING.md` is provisioned from `org-infra/docs/AI_TOOLING.md`. Propose
+generic compatibility guidance in that source as a separate docs-only change;
+do not copy this repository's OpenSpec links, dependency inventory, or runtime
+observations into an organization-wide template. Temporary downstream notes are
+allowed during this recovery. Relocate durable evidence to repository-owned
+documentation before accepting a provisioning update over the shared guide.
+This documentation follow-up does not expand the supervisor implementation or
+provider runtime behavior into another repository.
 
 ### Retain scope identity, recovery, and confirmation independently of plugins
 
